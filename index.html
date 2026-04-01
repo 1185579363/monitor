@@ -82,14 +82,17 @@
       height: 32px;
       border-radius: 10px;
       background: linear-gradient(135deg, #fb923c, #ea580c);
-      color: #fff;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
-      font-weight: 700;
       box-shadow: 0 10px 24px -12px rgba(249, 115, 22, 0.8);
       flex: 0 0 auto;
+    }
+
+    .brand-mark svg {
+      width: 18px;
+      height: 18px;
+      display: block;
     }
 
     .brand-title {
@@ -99,6 +102,17 @@
       font-weight: 700;
       letter-spacing: -0.02em;
       line-height: 1.2;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .brand-title small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0;
     }
 
     .brand-subtitle {
@@ -264,6 +278,29 @@
       line-height: 1.8;
       flex: 1 1 auto;
       text-align: justify;
+    }
+
+    .news-summary.is-collapsed {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 6;
+      overflow: hidden;
+    }
+
+    .summary-toggle {
+      margin-top: 10px;
+      border: 0;
+      background: transparent;
+      color: #f97316;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+      align-self: flex-start;
+    }
+
+    .summary-toggle:hover {
+      color: #ea580c;
     }
 
     .card-foot {
@@ -489,9 +526,18 @@
   <header class="site-header">
     <div class="header-inner">
       <div class="brand">
-        <div class="brand-mark">讯</div>
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <rect x="4.25" y="5" width="10.5" height="14" rx="3" fill="rgba(255,255,255,0.96)"/>
+            <path d="M8 9.25H11.5" stroke="#F97316" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M8 12H11.5" stroke="#F97316" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M8 14.75H10.75" stroke="#F97316" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M17.25 8.5C18.45 9.5 19 10.67 19 12C19 13.33 18.45 14.5 17.25 15.5" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M19.5 6.25C21.24 7.92 22 9.84 22 12C22 14.16 21.24 16.08 19.5 17.75" stroke="rgba(255,255,255,0.82)" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
         <div>
-          <h1 class="brand-title">人民财讯 Monitor</h1>
+          <h1 class="brand-title">每日股市快讯 <small>7*24小时快讯</small></h1>
           <div class="brand-subtitle" id="headerStamp">正在连接实时新闻接口</div>
         </div>
       </div>
@@ -533,7 +579,8 @@
         renderedCount: 0,
         loading: false,
         speakingId: null,
-        statusText: "正在连接实时新闻接口"
+        statusText: "正在连接实时新闻接口",
+        expandedIds: new Set()
       };
 
       const els = {
@@ -549,6 +596,12 @@
       });
 
       els.newsGrid.addEventListener("click", function (event) {
+        const toggleButton = event.target.closest("[data-summary-toggle-id]");
+        if (toggleButton) {
+          toggleSummary(toggleButton.getAttribute("data-summary-toggle-id"));
+          return;
+        }
+
         const button = event.target.closest("[data-read-id]");
         if (!button) {
           return;
@@ -597,6 +650,7 @@
           state.items = Array.isArray(payload.items) ? payload.items : [];
           state.visibleCount = 12;
           state.renderedCount = 0;
+          state.expandedIds = new Set();
           renderMeta(payload);
           renderList(true);
         } catch (error) {
@@ -690,6 +744,8 @@
       }
 
       function createNewsCardMarkup(item, index) {
+        const shouldCollapse = shouldCollapseSummary(item.summary);
+        const isExpanded = state.expandedIds.has(item.id);
         return (
           '<article class="news-card" style="animation-delay:' + Math.min(index * 35, 350) + 'ms">' +
             '<div class="card-head">' +
@@ -697,7 +753,10 @@
               (item.isRed ? '<span class="badge">标红</span>' : '') +
             '</div>' +
             '<h3 class="news-title">' + escapeHtml(item.title) + '</h3>' +
-            '<p class="news-summary">' + escapeHtml(item.summary || "该条快讯未提供摘要。") + '</p>' +
+            '<p class="news-summary ' + (shouldCollapse && !isExpanded ? 'is-collapsed' : '') + '" data-summary-id="' + escapeAttr(item.id) + '">' + escapeHtml(item.summary || "该条快讯未提供摘要。") + '</p>' +
+            (shouldCollapse
+              ? '<button class="summary-toggle" type="button" data-summary-toggle-id="' + escapeAttr(item.id) + '">' + (isExpanded ? '收起' : '展开') + '</button>'
+              : '') +
             '<div class="card-foot">' +
               '<span class="time">' + escapeHtml(formatTimeMeta(item)) + '</span>' +
               '<div class="card-actions">' +
@@ -731,6 +790,10 @@
 
       function escapeAttr(value) {
         return escapeHtml(value);
+      }
+
+      function shouldCollapseSummary(summary) {
+        return String(summary || "").trim().length > 180;
       }
 
       function formatTimeMeta(item) {
@@ -831,6 +894,35 @@
           button.classList.toggle("is-active", active);
           button.lastChild.textContent = active ? "停止" : "朗读";
         });
+      }
+
+      function toggleSummary(id) {
+        if (!id) {
+          return;
+        }
+
+        const summary = els.newsGrid.querySelector('[data-summary-id="' + cssEscape(id) + '"]');
+        const toggle = els.newsGrid.querySelector('[data-summary-toggle-id="' + cssEscape(id) + '"]');
+        if (!summary || !toggle) {
+          return;
+        }
+
+        if (state.expandedIds.has(id)) {
+          state.expandedIds.delete(id);
+          summary.classList.add("is-collapsed");
+          toggle.textContent = "展开";
+        } else {
+          state.expandedIds.add(id);
+          summary.classList.remove("is-collapsed");
+          toggle.textContent = "收起";
+        }
+      }
+
+      function cssEscape(value) {
+        if (window.CSS && typeof window.CSS.escape === "function") {
+          return window.CSS.escape(value);
+        }
+        return String(value).replace(/["\\]/g, "\\$&");
       }
     })();
   </script>
