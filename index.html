@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>人民财讯 Monitor</title>
+  <meta name="description" content="实时拉取人民财讯快讯的轻量新闻页。">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+
+    :root {
+      --bg: #fffcf8;
+      --panel: #ffffff;
+      --text: #334155;
+      --text-strong: #1e293b;
+      --muted: #94a3b8;
+      --line: #ffedd5;
+      --accent: #f97316;
+      --accent-soft: #fff7ed;
+      --accent-hover: #fdba74;
+      --max-width: 1024px;
+      --shadow: 0 12px 35px -10px rgba(249, 115, 22, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      font-family: 'Inter', 'Noto Sans SC', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      color: var(--text);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    }
+
+    .header-inner,
+    .main-inner,
+    .footer-inner {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+
+    .header-inner {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #fb923c, #ea580c);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      box-shadow: 0 10px 24px -12px rgba(249, 115, 22, 0.8);
+      flex: 0 0 auto;
+    }
+
+    .brand-title {
+      margin: 0;
+      color: var(--text-strong);
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .brand-subtitle {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 0 0 auto;
+    }
+
+    .status-light {
+      position: relative;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .status-light::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: rgba(249, 115, 22, 0.4);
+      animation: ping 1.8s ease-out infinite;
+    }
+
+    .icon-btn,
+    .site-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .icon-btn {
+      width: 36px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: color 180ms ease, background 180ms ease, transform 180ms ease;
+    }
+
+    .icon-btn:hover {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .icon-btn svg {
+      width: 18px;
+      height: 18px;
+      transition: transform 180ms ease;
+    }
+
+    .icon-btn.is-loading svg {
+      animation: spin 0.8s linear infinite;
+    }
+
+    .site-link {
+      padding: 0 14px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #ea580c;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 180ms ease, transform 180ms ease;
+    }
+
+    .site-link:hover {
+      background: #ffedd5;
+      transform: translateY(-1px);
+    }
+
+    .main-inner {
+      padding-top: 20px;
+      padding-bottom: 32px;
+    }
+
+    .news-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .news-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 260px;
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      transition: all 0.3s ease;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: card-in 0.4s ease forwards;
+    }
+
+    .news-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow);
+      border-color: var(--accent-hover);
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .source {
+      font-size: 12px;
+      color: #94a3b8;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .source::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #ea580c;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .news-title {
+      margin: 0 0 12px;
+      color: var(--text-strong);
+      font-size: 19px;
+      line-height: 1.55;
+      font-weight: 700;
+    }
+
+    .news-summary {
+      margin: 0;
+      color: #475569;
+      font-size: 14px;
+      line-height: 1.8;
+      flex: 1 1 auto;
+      text-align: justify;
+    }
+
+    .card-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid #fff3e8;
+    }
+
+    .time {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .card-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+    }
+
+    .read-btn {
+      border: 0;
+      background: transparent;
+      color: #f97316;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .read-btn svg {
+      width: 12px;
+      height: 12px;
+      flex: 0 0 auto;
+    }
+
+    .read-btn.is-active {
+      color: #ea580c;
+    }
+
+    .read-link {
+      color: #ea580c;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .read-link svg {
+      width: 12px;
+      height: 12px;
+      flex: 0 0 auto;
+    }
+
+    .skeleton-card {
+      min-height: 260px;
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .skeleton {
+      background: #ffedd5;
+      border-radius: 6px;
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .skeleton-line {
+      height: 14px;
+      margin-top: 10px;
+    }
+
+    .skeleton-line.title {
+      height: 24px;
+      width: 72%;
+      margin-top: 20px;
+    }
+
+    .skeleton-line.short {
+      width: 52%;
+    }
+
+    .empty-state {
+      display: none;
+      text-align: center;
+      padding: 96px 20px;
+      color: #94a3b8;
+    }
+
+    .empty-state.is-visible {
+      display: block;
+    }
+
+    .more-wrap {
+      display: flex;
+      justify-content: center;
+      margin-top: 24px;
+    }
+
+    .more-btn {
+      min-height: 40px;
+      padding: 0 18px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 180ms ease, transform 180ms ease;
+    }
+
+    .more-btn:hover {
+      background: var(--accent-soft);
+      transform: translateY(-1px);
+    }
+
+    .more-btn[hidden] {
+      display: none;
+    }
+
+    .footer {
+      border-top: 1px solid #fed7aa;
+      background: #fff;
+    }
+
+    .footer-inner {
+      padding-top: 20px;
+      padding-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: #94a3b8;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .footer-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 0 14px;
+      min-height: 34px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #ea580c;
+      font-weight: 500;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    @keyframes ping {
+      0% {
+        transform: scale(1);
+        opacity: 0.75;
+      }
+      100% {
+        transform: scale(2.4);
+        opacity: 0;
+      }
+    }
+
+    @keyframes card-in {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .5; }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 860px) {
+      .news-grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .header-inner {
+        min-height: 64px;
+      }
+
+      .brand-subtitle {
+        display: none;
+      }
+
+      .news-card,
+      .skeleton-card {
+        min-height: 0;
+        padding: 20px;
+      }
+
+      .news-title {
+        font-size: 18px;
+      }
+
+      .card-foot {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-mark">讯</div>
+        <div>
+          <h1 class="brand-title">人民财讯 Monitor</h1>
+          <div class="brand-subtitle" id="headerStamp">正在连接实时新闻接口</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="status-light" aria-hidden="true"></span>
+        <button class="icon-btn" id="refreshBtn" type="button" aria-label="刷新新闻">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"/>
+          </svg>
+        </button>
+        <a class="site-link" href="https://www.stcn.com/article/list/kx.html" target="_blank" rel="noreferrer">原站</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="main-inner">
+      <section>
+        <div class="news-grid" id="newsGrid"></div>
+        <div class="empty-state" id="emptyState">暂无最新数据</div>
+        <div class="more-wrap">
+          <button class="more-btn" id="moreBtn" type="button">加载更多</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <a class="footer-link" href="https://www.stcn.com/article/list/kx.html" target="_blank" rel="noreferrer">前往主站：证券时报人民财讯</a>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const state = {
+        items: [],
+        visibleCount: 12,
+        renderedCount: 0,
+        loading: false,
+        speakingId: null,
+        statusText: "正在连接实时新闻接口"
+      };
+
+      const els = {
+        headerStamp: document.getElementById("headerStamp"),
+        refreshBtn: document.getElementById("refreshBtn"),
+        newsGrid: document.getElementById("newsGrid"),
+        emptyState: document.getElementById("emptyState"),
+        moreBtn: document.getElementById("moreBtn")
+      };
+
+      els.refreshBtn.addEventListener("click", function () {
+        loadNews(true);
+      });
+
+      els.newsGrid.addEventListener("click", function (event) {
+        const button = event.target.closest("[data-read-id]");
+        if (!button) {
+          return;
+        }
+
+        const id = button.getAttribute("data-read-id");
+        toggleSpeech(id);
+      });
+
+      els.moreBtn.addEventListener("click", function () {
+        const previousCount = state.visibleCount;
+        state.visibleCount += 12;
+        appendMoreItems(previousCount);
+      });
+
+      window.addEventListener("beforeunload", function () {
+        stopSpeech();
+      });
+
+      loadNews(false);
+      window.setInterval(function () {
+        loadNews(false);
+      }, 60000);
+
+      async function loadNews(forceReset) {
+        if (state.loading) {
+          return;
+        }
+
+        state.loading = true;
+        els.refreshBtn.classList.add("is-loading");
+        els.headerStamp.textContent = "正在更新实时新闻";
+
+        if (!state.items.length || forceReset) {
+          renderSkeletons();
+        }
+
+        try {
+          const response = await fetch("/api/news?pages=3", { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+          }
+
+          const payload = await response.json();
+          stopSpeech();
+          state.items = Array.isArray(payload.items) ? payload.items : [];
+          state.visibleCount = 12;
+          state.renderedCount = 0;
+          renderMeta(payload);
+          renderList(true);
+        } catch (error) {
+          els.headerStamp.textContent = "实时接口请求失败";
+          if (!state.items.length) {
+            els.newsGrid.innerHTML = "";
+            els.emptyState.textContent = "实时接口请求失败，请稍后刷新或检查部署日志";
+            els.emptyState.classList.add("is-visible");
+            els.moreBtn.hidden = true;
+          }
+          console.error(error);
+        } finally {
+          state.loading = false;
+          els.refreshBtn.classList.remove("is-loading");
+        }
+      }
+
+      function renderMeta(payload) {
+        if (payload.isFallback) {
+          state.statusText = payload.generatedAtLabel
+            ? "缓存数据 · " + payload.generatedAtLabel
+            : "实时失败，已回退缓存";
+          els.headerStamp.textContent = state.statusText;
+          return;
+        }
+
+        state.statusText = payload.generatedAtLabel
+          ? "更新于 " + payload.generatedAtLabel
+          : "已完成刷新";
+        els.headerStamp.textContent = state.statusText;
+      }
+
+      function renderSkeletons() {
+        els.emptyState.classList.remove("is-visible");
+        els.moreBtn.hidden = true;
+        els.newsGrid.innerHTML = new Array(4).fill("").map(function () {
+          return (
+            '<div class="skeleton-card">' +
+              '<div class="skeleton skeleton-line short"></div>' +
+              '<div class="skeleton skeleton-line title"></div>' +
+              '<div class="skeleton skeleton-line"></div>' +
+              '<div class="skeleton skeleton-line"></div>' +
+              '<div class="skeleton skeleton-line short"></div>' +
+            '</div>'
+          );
+        }).join("");
+      }
+
+      function renderList(forceFullRender) {
+        if (!state.items.length) {
+          els.newsGrid.innerHTML = "";
+          els.emptyState.textContent = "暂无最新数据";
+          els.emptyState.classList.add("is-visible");
+          els.moreBtn.hidden = true;
+          state.renderedCount = 0;
+          return;
+        }
+
+        els.emptyState.classList.remove("is-visible");
+        const visibleItems = state.items.slice(0, state.visibleCount);
+        if (forceFullRender) {
+          els.newsGrid.innerHTML = visibleItems.map(function (item, index) {
+            return createNewsCardMarkup(item, index);
+          }).join("");
+          state.renderedCount = visibleItems.length;
+        }
+        els.moreBtn.hidden = visibleItems.length >= state.items.length;
+      }
+
+      function appendMoreItems(previousCount) {
+        if (!state.items.length) {
+          return;
+        }
+
+        const visibleItems = state.items.slice(0, state.visibleCount);
+        const nextItems = visibleItems.slice(previousCount);
+        if (!nextItems.length) {
+          els.moreBtn.hidden = visibleItems.length >= state.items.length;
+          return;
+        }
+
+        els.emptyState.classList.remove("is-visible");
+        const fragment = document.createRange().createContextualFragment(
+          nextItems.map(function (item, offset) {
+            return createNewsCardMarkup(item, previousCount + offset);
+          }).join("")
+        );
+        els.newsGrid.appendChild(fragment);
+        state.renderedCount = visibleItems.length;
+        els.moreBtn.hidden = visibleItems.length >= state.items.length;
+      }
+
+      function createNewsCardMarkup(item, index) {
+        return (
+          '<article class="news-card" style="animation-delay:' + Math.min(index * 35, 350) + 'ms">' +
+            '<div class="card-head">' +
+              '<span class="source">' + escapeHtml(item.source) + '</span>' +
+              (item.isRed ? '<span class="badge">标红</span>' : '') +
+            '</div>' +
+            '<h3 class="news-title">' + escapeHtml(item.title) + '</h3>' +
+            '<p class="news-summary">' + escapeHtml(item.summary || "该条快讯未提供摘要。") + '</p>' +
+            '<div class="card-foot">' +
+              '<span class="time">' + escapeHtml(formatTimeMeta(item)) + '</span>' +
+              '<div class="card-actions">' +
+                '<button class="read-btn ' + (state.speakingId === item.id ? 'is-active' : '') + '" type="button" data-read-id="' + escapeAttr(item.id) + '">' +
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+                    '<path stroke-linecap="round" stroke-linejoin="round" d="M11 5L6 9H3v6h3l5 4V5z"/>' +
+                    '<path stroke-linecap="round" stroke-linejoin="round" d="M15.5 8.5a5 5 0 0 1 0 7"/>' +
+                    '<path stroke-linecap="round" stroke-linejoin="round" d="M18.5 6a8.5 8.5 0 0 1 0 12"/>' +
+                  '</svg>' +
+                  (state.speakingId === item.id ? '停止' : '朗读') +
+                '</button>' +
+                '<a class="read-link" href="' + escapeAttr(item.url) + '" target="_blank" rel="noreferrer">原文' +
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+                    '<path stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7M17 7H9M17 7v8"/>' +
+                  '</svg>' +
+                '</a>' +
+              '</div>' +
+            '</div>' +
+          '</article>'
+        );
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function escapeAttr(value) {
+        return escapeHtml(value);
+      }
+
+      function formatTimeMeta(item) {
+        const baseLabel = item.publishedLabel || "";
+        const relativeLabel = getRelativeMinutesLabel(item);
+        return relativeLabel ? baseLabel + " · " + relativeLabel : baseLabel;
+      }
+
+      function getRelativeMinutesLabel(item) {
+        const timestamp = Number(item.timestamp || 0);
+        if (!timestamp) {
+          return "";
+        }
+
+        const diffMs = Date.now() - timestamp;
+        if (diffMs < 0) {
+          return "刚刚";
+        }
+
+        const diffMinutes = Math.floor(diffMs / 60000);
+        if (diffMinutes < 1) {
+          return "刚刚";
+        }
+        if (diffMinutes < 60) {
+          return diffMinutes + " 分钟前";
+        }
+
+        const diffHours = Math.floor(diffMinutes / 60);
+        if (diffHours < 24) {
+          return diffHours + " 小时前";
+        }
+
+        const diffDays = Math.floor(diffHours / 24);
+        return diffDays + " 天前";
+      }
+
+      function toggleSpeech(id) {
+        if (!("speechSynthesis" in window)) {
+          els.headerStamp.textContent = "当前浏览器不支持朗读";
+          return;
+        }
+
+        if (state.speakingId === id) {
+          stopSpeech();
+          updateSpeechButtons();
+          return;
+        }
+
+        const item = state.items.find(function (entry) {
+          return entry.id === id;
+        });
+        if (!item) {
+          return;
+        }
+
+        stopSpeech();
+        const utterance = new SpeechSynthesisUtterance(
+          item.title + "。" + (item.summary || "该条快讯未提供摘要。")
+        );
+        utterance.lang = "zh-CN";
+        utterance.rate = 1;
+        utterance.pitch = 1;
+        utterance.onend = function () {
+          state.speakingId = null;
+          els.headerStamp.textContent = state.statusText;
+          updateSpeechButtons();
+        };
+        utterance.onerror = function () {
+          state.speakingId = null;
+          els.headerStamp.textContent = "朗读失败，请重试";
+          updateSpeechButtons();
+        };
+
+        const voice = window.speechSynthesis.getVoices().find(function (entry) {
+          return (entry.lang || "").toLowerCase().includes("zh");
+        });
+        if (voice) {
+          utterance.voice = voice;
+        }
+
+        state.speakingId = id;
+        window.speechSynthesis.speak(utterance);
+        els.headerStamp.textContent = "正在朗读";
+        updateSpeechButtons();
+      }
+
+      function stopSpeech() {
+        if ("speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+        state.speakingId = null;
+        els.headerStamp.textContent = state.statusText;
+      }
+
+      function updateSpeechButtons() {
+        els.newsGrid.querySelectorAll("[data-read-id]").forEach(function (button) {
+          const active = button.getAttribute("data-read-id") === state.speakingId;
+          button.classList.toggle("is-active", active);
+          button.lastChild.textContent = active ? "停止" : "朗读";
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
