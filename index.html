@@ -18,7 +18,7 @@
       --accent: #f97316;
       --accent-soft: #fff7ed;
       --accent-hover: #fdba74;
-      --max-width: 1024px;
+      --max-width: 1380px;
       --shadow: 0 12px 35px -10px rgba(249, 115, 22, 0.12);
     }
 
@@ -58,8 +58,8 @@
     .footer-inner {
       max-width: var(--max-width);
       margin: 0 auto;
-      padding-left: 16px;
-      padding-right: 16px;
+      padding-left: 24px;
+      padding-right: 24px;
     }
 
     .header-inner {
@@ -148,8 +148,7 @@
       animation: ping 1.8s ease-out infinite;
     }
 
-    .icon-btn,
-    .site-link {
+    .icon-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -181,30 +180,112 @@
       animation: spin 0.8s linear infinite;
     }
 
-    .site-link {
-      padding: 0 14px;
-      border-radius: 999px;
-      background: var(--accent-soft);
-      color: #ea580c;
-      font-size: 13px;
-      font-weight: 600;
-      transition: background 180ms ease, transform 180ms ease;
-    }
-
-    .site-link:hover {
-      background: #ffedd5;
-      transform: translateY(-1px);
-    }
-
     .main-inner {
       padding-top: 20px;
       padding-bottom: 32px;
     }
 
+    .content-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 420px;
+      gap: 32px;
+      align-items: start;
+    }
+
     .news-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 24px;
+      gap: 28px;
+    }
+
+    .side-panel {
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .jinse-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .jinse-card {
+      min-height: 188px;
+      padding: 16px 16px 14px;
+      border-radius: 16px;
+      border: 1px solid #f8e7c8;
+      background: linear-gradient(180deg, #fffdf8 0%, #fff8ee 100%);
+      box-shadow: 0 10px 30px -18px rgba(196, 139, 37, 0.22);
+    }
+
+    .jinse-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      color: #a27b2b;
+      font-size: 12px;
+    }
+
+    .jinse-source {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+    }
+
+    .jinse-source::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #e4b24a;
+      flex: 0 0 auto;
+    }
+
+    .jinse-card h3 {
+      margin: 0 0 10px;
+      color: #3b2b0c;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .jinse-card p {
+      margin: 0;
+      color: #695638;
+      font-size: 12px;
+      line-height: 1.7;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 4;
+      overflow: hidden;
+    }
+
+    .jinse-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      color: #b37b10;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .jinse-link svg {
+      width: 12px;
+      height: 12px;
+      flex: 0 0 auto;
+    }
+
+    .jinse-empty {
+      padding: 24px 18px;
+      border-radius: 16px;
+      border: 1px solid #f8e7c8;
+      background: linear-gradient(180deg, #fffdf8 0%, #fff8ee 100%);
+      color: #8f7b58;
+      font-size: 13px;
+      line-height: 1.7;
     }
 
     .news-card {
@@ -429,35 +510,6 @@
       display: none;
     }
 
-    .footer {
-      border-top: 1px solid #fed7aa;
-      background: #fff;
-    }
-
-    .footer-inner {
-      padding-top: 20px;
-      padding-bottom: 24px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      color: #94a3b8;
-      font-size: 12px;
-      text-align: center;
-    }
-
-    .footer-link {
-      display: inline-flex;
-      align-items: center;
-      padding: 0 14px;
-      min-height: 34px;
-      border-radius: 999px;
-      background: var(--accent-soft);
-      color: #ea580c;
-      font-weight: 500;
-    }
-
     code {
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
@@ -490,10 +542,12 @@
     }
 
     @media (max-width: 860px) {
+      .content-layout,
       .news-grid {
         grid-template-columns: 1fr;
         gap: 18px;
       }
+
     }
 
     @media (max-width: 640px) {
@@ -548,28 +602,27 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"/>
           </svg>
         </button>
-        <a class="site-link" href="https://www.stcn.com/article/list/kx.html" target="_blank" rel="noreferrer">原站</a>
       </div>
     </div>
   </header>
 
   <main>
     <div class="main-inner">
-      <section>
-        <div class="news-grid" id="newsGrid"></div>
-        <div class="empty-state" id="emptyState">暂无最新数据</div>
-        <div class="more-wrap">
-          <button class="more-btn" id="moreBtn" type="button">加载更多</button>
-        </div>
-      </section>
+      <div class="content-layout">
+        <section>
+          <div class="news-grid" id="newsGrid"></div>
+          <div class="empty-state" id="emptyState">暂无最新数据</div>
+        </section>
+
+        <aside class="side-panel">
+          <div class="jinse-list" id="jinseList"></div>
+        </aside>
+      </div>
+      <div class="more-wrap">
+        <button class="more-btn" id="moreBtn" type="button">加载更多</button>
+      </div>
     </div>
   </main>
-
-  <footer class="footer">
-    <div class="footer-inner">
-      <a class="footer-link" href="https://www.stcn.com/article/list/kx.html" target="_blank" rel="noreferrer">前往主站：证券时报人民财讯</a>
-    </div>
-  </footer>
 
   <script>
     (function () {
@@ -577,6 +630,9 @@
         items: [],
         visibleCount: 12,
         renderedCount: 0,
+        jinseItems: [],
+        visibleJinseCount: 6,
+        renderedJinseCount: 0,
         loading: false,
         speakingId: null,
         statusText: "正在连接实时新闻接口",
@@ -588,7 +644,8 @@
         refreshBtn: document.getElementById("refreshBtn"),
         newsGrid: document.getElementById("newsGrid"),
         emptyState: document.getElementById("emptyState"),
-        moreBtn: document.getElementById("moreBtn")
+        moreBtn: document.getElementById("moreBtn"),
+        jinseList: document.getElementById("jinseList")
       };
 
       els.refreshBtn.addEventListener("click", function () {
@@ -613,8 +670,12 @@
 
       els.moreBtn.addEventListener("click", function () {
         const previousCount = state.visibleCount;
+        const previousJinseCount = state.visibleJinseCount;
         state.visibleCount += 12;
+        state.visibleJinseCount += 6;
         appendMoreItems(previousCount);
+        appendMoreJinse(previousJinseCount);
+        syncMoreButton();
       });
 
       window.addEventListener("beforeunload", function () {
@@ -622,8 +683,10 @@
       });
 
       loadNews(false);
+      loadJinse();
       window.setInterval(function () {
         loadNews(false);
+        loadJinse();
       }, 60000);
 
       async function loadNews(forceReset) {
@@ -653,18 +716,45 @@
           state.expandedIds = new Set();
           renderMeta(payload);
           renderList(true);
+          syncMoreButton();
         } catch (error) {
           els.headerStamp.textContent = "实时接口请求失败";
           if (!state.items.length) {
             els.newsGrid.innerHTML = "";
             els.emptyState.textContent = "实时接口请求失败，请稍后刷新或检查部署日志";
             els.emptyState.classList.add("is-visible");
-            els.moreBtn.hidden = true;
           }
+          syncMoreButton();
           console.error(error);
         } finally {
           state.loading = false;
           els.refreshBtn.classList.remove("is-loading");
+        }
+      }
+
+      async function loadJinse() {
+        try {
+          const currentVisibleJinseCount = state.visibleJinseCount || 10;
+          const response = await fetch("/api/jinse?limit=20&t=" + Date.now(), { cache: "no-store" });
+          if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+          }
+          const payload = await response.json();
+          state.jinseItems = Array.isArray(payload.items) ? payload.items : [];
+          state.visibleJinseCount = Math.min(
+            state.jinseItems.length,
+            Math.max(currentVisibleJinseCount, 10)
+          );
+          state.renderedJinseCount = 0;
+          renderJinse(true);
+          syncMoreButton();
+        } catch (error) {
+          state.jinseItems = [];
+          state.visibleJinseCount = 0;
+          state.renderedJinseCount = 0;
+          renderJinse(true);
+          syncMoreButton();
+          console.error(error);
         }
       }
 
@@ -685,7 +775,6 @@
 
       function renderSkeletons() {
         els.emptyState.classList.remove("is-visible");
-        els.moreBtn.hidden = true;
         els.newsGrid.innerHTML = new Array(4).fill("").map(function () {
           return (
             '<div class="skeleton-card">' +
@@ -699,13 +788,50 @@
         }).join("");
       }
 
+      function renderJinse(forceFullRender) {
+        if (!state.jinseItems.length) {
+          els.jinseList.innerHTML =
+            '<div class="jinse-empty">暂时没有抓到金色财经快讯，请稍后自动刷新。</div>';
+          state.renderedJinseCount = 0;
+          return;
+        }
+
+        const visibleItems = state.jinseItems.slice(0, state.visibleJinseCount);
+        if (forceFullRender) {
+          els.jinseList.innerHTML = visibleItems.map(function (item) {
+            return createJinseCardMarkup(item);
+          }).join("");
+          state.renderedJinseCount = visibleItems.length;
+        }
+      }
+
+      function appendMoreJinse(previousCount) {
+        if (!state.jinseItems.length) {
+          return;
+        }
+
+        const visibleItems = state.jinseItems.slice(0, state.visibleJinseCount);
+        const nextItems = visibleItems.slice(previousCount);
+        if (!nextItems.length) {
+          return;
+        }
+
+        const fragment = document.createRange().createContextualFragment(
+          nextItems.map(function (item) {
+            return createJinseCardMarkup(item);
+          }).join("")
+        );
+        els.jinseList.appendChild(fragment);
+        state.renderedJinseCount = visibleItems.length;
+      }
+
       function renderList(forceFullRender) {
         if (!state.items.length) {
           els.newsGrid.innerHTML = "";
           els.emptyState.textContent = "暂无最新数据";
           els.emptyState.classList.add("is-visible");
-          els.moreBtn.hidden = true;
           state.renderedCount = 0;
+          syncMoreButton();
           return;
         }
 
@@ -717,7 +843,7 @@
           }).join("");
           state.renderedCount = visibleItems.length;
         }
-        els.moreBtn.hidden = visibleItems.length >= state.items.length;
+        syncMoreButton();
       }
 
       function appendMoreItems(previousCount) {
@@ -740,7 +866,25 @@
         );
         els.newsGrid.appendChild(fragment);
         state.renderedCount = visibleItems.length;
-        els.moreBtn.hidden = visibleItems.length >= state.items.length;
+        syncMoreButton();
+      }
+
+      function createJinseCardMarkup(item) {
+        return (
+          '<article class="jinse-card">' +
+            '<div class="jinse-meta">' +
+              '<span class="jinse-source">金色财经</span>' +
+              '<span>' + escapeHtml(item.timeLabel || "") + '</span>' +
+            '</div>' +
+            '<h3>' + escapeHtml(item.title) + '</h3>' +
+            '<p>' + escapeHtml(item.summary || "暂无摘要") + '</p>' +
+            '<a class="jinse-link" href="' + escapeAttr(item.url) + '" target="_blank" rel="noreferrer">原文' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7M17 7H9M17 7v8"/>' +
+              '</svg>' +
+            '</a>' +
+          '</article>'
+        );
       }
 
       function createNewsCardMarkup(item, index) {
@@ -894,6 +1038,12 @@
           button.classList.toggle("is-active", active);
           button.lastChild.textContent = active ? "停止" : "朗读";
         });
+      }
+
+      function syncMoreButton() {
+        const hasMoreNews = state.items.length > state.visibleCount;
+        const hasMoreJinse = state.jinseItems.length > state.visibleJinseCount;
+        els.moreBtn.hidden = !hasMoreNews && !hasMoreJinse;
       }
 
       function toggleSummary(id) {
