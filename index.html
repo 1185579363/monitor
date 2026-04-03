@@ -639,6 +639,11 @@
     }
 
     @media (max-width: 640px) {
+      .site-header {
+        position: static;
+        backdrop-filter: none;
+      }
+
       .header-inner,
       .main-inner,
       .footer-inner {
@@ -683,12 +688,7 @@
       }
 
       .search-box {
-        order: 1;
-      }
-
-      .search-input {
-        height: 36px;
-        padding: 0 12px;
+        display: none;
       }
 
       .status-light {
@@ -766,13 +766,8 @@
       }
 
       .header-actions {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto auto;
+        display: flex;
         align-items: center;
-      }
-
-      .search-box {
-        width: 100%;
       }
     }
   </style>
