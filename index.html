@@ -131,6 +131,32 @@
       flex: 0 0 auto;
     }
 
+    .search-box {
+      width: 220px;
+      flex: 0 0 auto;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 38px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--text);
+      outline: none;
+      transition: border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    .search-input::placeholder {
+      color: var(--muted);
+    }
+
+    .search-input:focus {
+      border-color: #fdba74;
+      box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.08);
+    }
+
     .status-light {
       position: relative;
       width: 12px;
@@ -251,22 +277,33 @@
       line-height: 1.5;
     }
 
-    .jinse-card p {
+    .jinse-summary {
       margin: 0;
       color: #695638;
       font-size: 12px;
       line-height: 1.7;
+    }
+
+    .jinse-summary.is-collapsed {
       display: -webkit-box;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 4;
       overflow: hidden;
     }
 
+    .jinse-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
     .jinse-link {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      margin-top: 10px;
+      margin-top: 0;
       color: #b37b10;
       font-size: 12px;
       font-weight: 600;
@@ -275,6 +312,13 @@
     .jinse-link svg {
       width: 12px;
       height: 12px;
+      flex: 0 0 auto;
+    }
+
+    .jinse-actions .summary-toggle {
+      width: fit-content;
+      margin-top: 0;
+      margin-left: auto;
       flex: 0 0 auto;
     }
 
@@ -369,7 +413,10 @@
     }
 
     .summary-toggle {
+      display: block;
+      width: fit-content;
       margin-top: 10px;
+      margin-left: auto;
       border: 0;
       background: transparent;
       color: #f97316;
@@ -377,7 +424,8 @@
       font-weight: 600;
       cursor: pointer;
       padding: 0;
-      align-self: flex-start;
+      text-align: right;
+      align-self: flex-end;
     }
 
     .summary-toggle:hover {
@@ -490,6 +538,11 @@
       margin-top: 24px;
     }
 
+    .side-more-wrap {
+      margin-top: 4px;
+      justify-content: flex-start;
+    }
+
     .more-btn {
       min-height: 40px;
       padding: 0 18px;
@@ -596,6 +649,9 @@
         </div>
       </div>
       <div class="header-actions">
+        <label class="search-box" for="searchInput">
+          <input class="search-input" id="searchInput" type="search" placeholder="搜索新闻" autocomplete="off">
+        </label>
         <span class="status-light" aria-hidden="true"></span>
         <button class="icon-btn" id="refreshBtn" type="button" aria-label="刷新新闻">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -616,6 +672,9 @@
 
         <aside class="side-panel">
           <div class="jinse-list" id="jinseList"></div>
+          <div class="more-wrap side-more-wrap">
+            <button class="more-btn" id="jinseMoreBtn" type="button" hidden>加载更多</button>
+          </div>
         </aside>
       </div>
       <div class="more-wrap">
@@ -628,11 +687,12 @@
     (function () {
       const state = {
         items: [],
-        visibleCount: 12,
+        visibleCount: 36,
         renderedCount: 0,
         jinseItems: [],
-        visibleJinseCount: 6,
+        visibleJinseCount: 30,
         renderedJinseCount: 0,
+        searchQuery: "",
         loading: false,
         speakingId: null,
         statusText: "正在连接实时新闻接口",
@@ -641,15 +701,28 @@
 
       const els = {
         headerStamp: document.getElementById("headerStamp"),
+        searchInput: document.getElementById("searchInput"),
         refreshBtn: document.getElementById("refreshBtn"),
         newsGrid: document.getElementById("newsGrid"),
         emptyState: document.getElementById("emptyState"),
         moreBtn: document.getElementById("moreBtn"),
+        jinseMoreBtn: document.getElementById("jinseMoreBtn"),
         jinseList: document.getElementById("jinseList")
       };
 
       els.refreshBtn.addEventListener("click", function () {
         loadNews(true);
+      });
+
+      els.searchInput.addEventListener("input", function (event) {
+        state.searchQuery = normalizeSearchText(event.target.value);
+        stopSpeech();
+        state.renderedCount = 0;
+        state.renderedJinseCount = 0;
+        renderList(true);
+        renderJinse(true);
+        syncMoreButton();
+        syncJinseMoreButton();
       });
 
       els.newsGrid.addEventListener("click", function (event) {
@@ -668,6 +741,14 @@
         toggleSpeech(id);
       });
 
+      els.jinseList.addEventListener("click", function (event) {
+        const toggleButton = event.target.closest("[data-summary-toggle-id]");
+        if (!toggleButton) {
+          return;
+        }
+        toggleSummary(toggleButton.getAttribute("data-summary-toggle-id"));
+      });
+
       els.moreBtn.addEventListener("click", function () {
         const previousCount = state.visibleCount;
         const previousJinseCount = state.visibleJinseCount;
@@ -676,6 +757,15 @@
         appendMoreItems(previousCount);
         appendMoreJinse(previousJinseCount);
         syncMoreButton();
+        syncJinseMoreButton();
+      });
+
+      els.jinseMoreBtn.addEventListener("click", function () {
+        const previousJinseCount = state.visibleJinseCount;
+        state.visibleJinseCount += 6;
+        appendMoreJinse(previousJinseCount);
+        syncMoreButton();
+        syncJinseMoreButton();
       });
 
       window.addEventListener("beforeunload", function () {
@@ -703,6 +793,7 @@
         }
 
         try {
+          const currentVisibleCount = state.visibleCount || 36;
           const response = await fetch("/api/news?pages=8", { cache: "no-store" });
           if (!response.ok) {
             throw new Error("HTTP " + response.status);
@@ -711,12 +802,15 @@
           const payload = await response.json();
           stopSpeech();
           state.items = Array.isArray(payload.items) ? payload.items : [];
-          state.visibleCount = 12;
+          state.visibleCount = forceReset
+            ? Math.min(state.items.length, 36)
+            : Math.min(state.items.length, Math.max(currentVisibleCount, 36));
           state.renderedCount = 0;
           state.expandedIds = new Set();
           renderMeta(payload);
           renderList(true);
           syncMoreButton();
+          syncJinseMoreButton();
         } catch (error) {
           els.headerStamp.textContent = "实时接口请求失败";
           if (!state.items.length) {
@@ -725,6 +819,7 @@
             els.emptyState.classList.add("is-visible");
           }
           syncMoreButton();
+          syncJinseMoreButton();
           console.error(error);
         } finally {
           state.loading = false;
@@ -734,8 +829,8 @@
 
       async function loadJinse() {
         try {
-          const currentVisibleJinseCount = state.visibleJinseCount || 10;
-          const response = await fetch("/api/jinse?limit=20&t=" + Date.now(), { cache: "no-store" });
+          const currentVisibleJinseCount = state.visibleJinseCount || 30;
+          const response = await fetch("/api/jinse?limit=50&t=" + Date.now(), { cache: "no-store" });
           if (!response.ok) {
             throw new Error("HTTP " + response.status);
           }
@@ -743,17 +838,22 @@
           state.jinseItems = Array.isArray(payload.items) ? payload.items : [];
           state.visibleJinseCount = Math.min(
             state.jinseItems.length,
-            Math.max(currentVisibleJinseCount, 10)
+            Math.max(currentVisibleJinseCount, 30)
           );
+          if (state.searchQuery) {
+            els.jinseList.innerHTML = '<div class="jinse-empty">未找到相关金色财经新闻。</div>';
+          }
           state.renderedJinseCount = 0;
           renderJinse(true);
           syncMoreButton();
+          syncJinseMoreButton();
         } catch (error) {
           state.jinseItems = [];
           state.visibleJinseCount = 0;
           state.renderedJinseCount = 0;
           renderJinse(true);
           syncMoreButton();
+          syncJinseMoreButton();
           console.error(error);
         }
       }
@@ -789,28 +889,33 @@
       }
 
       function renderJinse(forceFullRender) {
-        if (!state.jinseItems.length) {
+        const filteredItems = getFilteredJinseItems();
+        if (!filteredItems.length) {
           els.jinseList.innerHTML =
             '<div class="jinse-empty">暂时没有抓到金色财经快讯，请稍后自动刷新。</div>';
           state.renderedJinseCount = 0;
+          syncJinseMoreButton();
           return;
         }
 
-        const visibleItems = state.jinseItems.slice(0, state.visibleJinseCount);
+        const visibleItems = filteredItems.slice(0, state.visibleJinseCount);
         if (forceFullRender) {
           els.jinseList.innerHTML = visibleItems.map(function (item) {
-            return createJinseCardMarkup(item);
+            return createJinseCardMarkupEnhanced(item);
           }).join("");
           state.renderedJinseCount = visibleItems.length;
+          syncSummaryToggles(els.jinseList);
         }
+        syncJinseMoreButton();
       }
 
       function appendMoreJinse(previousCount) {
-        if (!state.jinseItems.length) {
+        const filteredItems = getFilteredJinseItems();
+        if (!filteredItems.length) {
           return;
         }
 
-        const visibleItems = state.jinseItems.slice(0, state.visibleJinseCount);
+        const visibleItems = filteredItems.slice(0, state.visibleJinseCount);
         const nextItems = visibleItems.slice(previousCount);
         if (!nextItems.length) {
           return;
@@ -818,17 +923,23 @@
 
         const fragment = document.createRange().createContextualFragment(
           nextItems.map(function (item) {
-            return createJinseCardMarkup(item);
+            return createJinseCardMarkupEnhanced(item);
           }).join("")
         );
         els.jinseList.appendChild(fragment);
         state.renderedJinseCount = visibleItems.length;
+        syncSummaryToggles(els.jinseList);
+        syncJinseMoreButton();
       }
 
       function renderList(forceFullRender) {
-        if (!state.items.length) {
+        const filteredItems = getFilteredNewsItems();
+        if (!filteredItems.length) {
           els.newsGrid.innerHTML = "";
           els.emptyState.textContent = "暂无最新数据";
+          if (state.searchQuery) {
+            els.emptyState.textContent = "未找到相关新闻";
+          }
           els.emptyState.classList.add("is-visible");
           state.renderedCount = 0;
           syncMoreButton();
@@ -836,25 +947,27 @@
         }
 
         els.emptyState.classList.remove("is-visible");
-        const visibleItems = state.items.slice(0, state.visibleCount);
+        const visibleItems = filteredItems.slice(0, state.visibleCount);
         if (forceFullRender) {
           els.newsGrid.innerHTML = visibleItems.map(function (item, index) {
             return createNewsCardMarkup(item, index);
           }).join("");
           state.renderedCount = visibleItems.length;
+          syncSummaryToggles(els.newsGrid);
         }
         syncMoreButton();
       }
 
       function appendMoreItems(previousCount) {
-        if (!state.items.length) {
+        const filteredItems = getFilteredNewsItems();
+        if (!filteredItems.length) {
           return;
         }
 
-        const visibleItems = state.items.slice(0, state.visibleCount);
+        const visibleItems = filteredItems.slice(0, state.visibleCount);
         const nextItems = visibleItems.slice(previousCount);
         if (!nextItems.length) {
-          els.moreBtn.hidden = visibleItems.length >= state.items.length;
+          els.moreBtn.hidden = visibleItems.length >= filteredItems.length;
           return;
         }
 
@@ -866,6 +979,7 @@
         );
         els.newsGrid.appendChild(fragment);
         state.renderedCount = visibleItems.length;
+        syncSummaryToggles(els.newsGrid);
         syncMoreButton();
       }
 
@@ -883,6 +997,31 @@
                 '<path stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7M17 7H9M17 7v8"/>' +
               '</svg>' +
             '</a>' +
+          '</article>'
+        );
+      }
+
+      function createJinseCardMarkupEnhanced(item) {
+        const shouldCollapse = shouldCollapseJinseSummary(item.summary);
+        const isExpanded = state.expandedIds.has(item.id);
+        return (
+          '<article class="jinse-card">' +
+            '<div class="jinse-meta">' +
+              '<span class="jinse-source">金色财经</span>' +
+              '<span>' + escapeHtml(item.timeLabel || "") + '</span>' +
+            '</div>' +
+            '<h3>' + escapeHtml(item.title) + '</h3>' +
+            '<p class="jinse-summary ' + (shouldCollapse && !isExpanded ? 'is-collapsed' : '') + '" data-summary-id="' + escapeAttr(item.id) + '">' + escapeHtml(item.summary || "暂无摘要") + '</p>' +
+            '<div class="jinse-actions">' +
+              '<a class="jinse-link" href="' + escapeAttr(item.url) + '" target="_blank" rel="noreferrer">原文' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+                  '<path stroke-linecap="round" stroke-linejoin="round" d="M7 17L17 7M17 7H9M17 7v8"/>' +
+                '</svg>' +
+              '</a>' +
+              (shouldCollapse
+                ? '<button class="summary-toggle" type="button" data-summary-toggle-id="' + escapeAttr(item.id) + '">' + (isExpanded ? '收起' : '展开') + '</button>'
+                : '') +
+            '</div>' +
           '</article>'
         );
       }
@@ -936,8 +1075,36 @@
         return escapeHtml(value);
       }
 
+      function normalizeSearchText(value) {
+        return String(value || "").trim().toLowerCase();
+      }
+
+      function matchesSearch(item) {
+        if (!state.searchQuery) {
+          return true;
+        }
+        const haystack = [
+          item && item.title,
+          item && item.summary,
+          item && item.source
+        ].join(" ").toLowerCase();
+        return haystack.includes(state.searchQuery);
+      }
+
+      function getFilteredNewsItems() {
+        return state.items.filter(matchesSearch);
+      }
+
+      function getFilteredJinseItems() {
+        return state.jinseItems.filter(matchesSearch);
+      }
+
       function shouldCollapseSummary(summary) {
         return String(summary || "").trim().length > 180;
+      }
+
+      function shouldCollapseJinseSummary(summary) {
+        return String(summary || "").trim().length > 88;
       }
 
       function formatTimeMeta(item) {
@@ -1040,10 +1207,49 @@
         });
       }
 
+      function syncSummaryToggles(container) {
+        if (!container) {
+          return;
+        }
+
+        container.querySelectorAll("[data-summary-toggle-id]").forEach(function (toggle) {
+          const id = toggle.getAttribute("data-summary-toggle-id");
+          const summary = container.querySelector('[data-summary-id="' + cssEscape(id) + '"]');
+          if (!summary) {
+            toggle.hidden = true;
+            return;
+          }
+
+          const isExpanded = state.expandedIds.has(id);
+          summary.classList.add("is-collapsed");
+          const needsToggle = summary.scrollHeight - summary.clientHeight > 1;
+
+          if (!needsToggle) {
+            state.expandedIds.delete(id);
+            summary.classList.remove("is-collapsed");
+            toggle.hidden = true;
+            return;
+          }
+
+          toggle.hidden = false;
+          if (isExpanded) {
+            summary.classList.remove("is-collapsed");
+            toggle.textContent = "收起";
+          } else {
+            summary.classList.add("is-collapsed");
+            toggle.textContent = "展开";
+          }
+        });
+      }
+
       function syncMoreButton() {
-        const hasMoreNews = state.items.length > state.visibleCount;
-        const hasMoreJinse = state.jinseItems.length > state.visibleJinseCount;
+        const hasMoreNews = getFilteredNewsItems().length > state.visibleCount;
+        const hasMoreJinse = getFilteredJinseItems().length > state.visibleJinseCount;
         els.moreBtn.hidden = !hasMoreNews && !hasMoreJinse;
+      }
+
+      function syncJinseMoreButton() {
+        els.jinseMoreBtn.hidden = getFilteredJinseItems().length <= state.visibleJinseCount;
       }
 
       function toggleSummary(id) {
@@ -1051,8 +1257,8 @@
           return;
         }
 
-        const summary = els.newsGrid.querySelector('[data-summary-id="' + cssEscape(id) + '"]');
-        const toggle = els.newsGrid.querySelector('[data-summary-toggle-id="' + cssEscape(id) + '"]');
+        const summary = document.querySelector('[data-summary-id="' + cssEscape(id) + '"]');
+        const toggle = document.querySelector('[data-summary-toggle-id="' + cssEscape(id) + '"]');
         if (!summary || !toggle) {
           return;
         }
