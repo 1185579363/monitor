@@ -7,21 +7,200 @@
   <meta name="description" content="实时拉取人民财讯快讯的轻量新闻页。">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="shortcut icon" href="/favicon.svg">
+  <script>
+    try {
+      const savedTheme = localStorage.getItem("peopleFinanceTheme");
+      if (savedTheme) {
+        document.documentElement.dataset.theme = savedTheme;
+      }
+    } catch (error) {}
+  </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
 
     :root {
+      --bg: #17110d;
+      --bg-2: #1d1610;
+      --panel: #1c1510;
+      --panel-2: #221a13;
+      --text: #d8c5aa;
+      --text-strong: #f3e4cf;
+      --muted: #a8967d;
+      --faint: #6e6151;
+      --line: rgba(243, 228, 207, 0.13);
+      --line-strong: rgba(243, 228, 207, 0.24);
+      --accent: #e46f2e;
+      --accent-2: #c75d24;
+      --accent-soft: rgba(228, 111, 46, 0.12);
+      --accent-hover: #f0823f;
+      --panel-accent: #e46f2e;
+      --panel-accent-soft: rgba(228, 111, 46, 0.12);
+      --panel-accent-hover: #f0823f;
+      --panel-hover-border: #f0823f;
+      --content-soft: #d8c5aa;
+      --intel-title: #f3e4cf;
+      --intel-shadow: var(--shadow);
+      --intel-action-border: var(--line-strong);
+      --intel-action-bg: rgba(34, 26, 19, 0.82);
+      --metric-border: var(--line);
+      --modal-line: var(--line);
+      --soft-control-border: var(--line);
+      --news-hover-border: var(--line-strong);
+      --card-foot-line: var(--line);
+      --action-link: #f0823f;
+      --action-link-active: #e46f2e;
+      --badge-text: #f0823f;
+      --smart-bg: rgba(147, 168, 94, 0.14);
+      --smart-text: #93a85e;
+      --max-width: 1380px;
+      --shadow: 7px 7px 0 rgba(0, 0, 0, 0.42);
+      --body-bg: linear-gradient(180deg, rgba(34, 26, 19, 0.42) 0%, rgba(23, 17, 13, 0) 280px), var(--bg);
+      --header-bg: rgba(23, 17, 13, 0.88);
+      --header-shadow: 0 1px 0 rgba(0, 0, 0, 0.36);
+      --brand-shadow: 4px 4px 0 rgba(0, 0, 0, 0.45);
+      --control-bg: rgba(28, 21, 16, 0.92);
+      --soft-control-bg: rgba(28, 21, 16, 0.86);
+      --metric-bg: rgba(34, 26, 19, 0.82);
+      --brief-panel-bg: linear-gradient(135deg, rgba(34, 26, 19, 0.94), rgba(28, 21, 16, 0.98) 52%);
+      --brief-panel-border: rgba(243, 228, 207, 0.18);
+      --brief-action-band-bg: rgba(34, 26, 19, 0.46);
+      --brief-action-bg: rgba(28, 21, 16, 0.92);
+      --brief-action-border: rgba(240, 130, 63, 0.34);
+      --brief-action-text: #f3e4cf;
+      --brief-action-hover-border: #f0823f;
+      --brief-action-shadow: 0 1px 0 rgba(240, 130, 63, 0.05);
+      --brief-action-active-bg: #e46f2e;
+      --brief-action-active-text: #17110d;
+      --brief-metric-bg: rgba(34, 26, 19, 0.82);
+      --brief-metric-border: rgba(243, 228, 207, 0.18);
+      --brief-metric-label: #a8967d;
+      --brief-metric-value: #f3e4cf;
+      --brief-shadow: 7px 7px 0 rgba(0, 0, 0, 0.3);
+      --focus-ring: rgba(228, 111, 46, 0.12);
+      --ping-bg: rgba(228, 111, 46, 0.36);
+      --panel-gradient: linear-gradient(135deg, rgba(34, 26, 19, 0.94), rgba(28, 21, 16, 0.98) 52%);
+      --jinse-bg: linear-gradient(180deg, var(--panel-2) 0%, var(--panel) 100%);
+      --jinse-border: var(--line-strong);
+      --jinse-shadow: 4px 4px 0 rgba(0, 0, 0, 0.36);
+      --jinse-meta: #a8967d;
+      --jinse-dot: #e46f2e;
+      --jinse-title: #f3e4cf;
+      --jinse-summary: #d8c5aa;
+      --jinse-link: #f0823f;
+      --jinse-empty-text: #a8967d;
+      --active-text: #17110d;
+      --modal-backdrop-bg: rgba(0, 0, 0, 0.58);
+      --modal-shadow: 0 32px 80px -44px rgba(0, 0, 0, 0.84);
+      --success-bg: rgba(147, 168, 94, 0.14);
+      --success-text: #93a85e;
+      --risk-bg: rgba(215, 106, 74, 0.16);
+      --risk-text: #d76a4a;
+      --red-card-bg: var(--panel);
+      --red-card-border: rgba(240, 130, 63, 0.58);
+      --red-card-accent: #f0823f;
+      --red-card-glow: rgba(228, 111, 46, 0.28);
+      --red-card-sheen: rgba(240, 130, 63, 0.16);
+      --red-card-title-line: rgba(240, 130, 63, 0.56);
+      --red-card-shadow: 0 18px 46px -32px rgba(0, 0, 0, 0.96), 0 0 0 1px rgba(240, 130, 63, 0.16) inset;
+      --signal-dot: #93a85e;
+      --signal-ring: rgba(147, 168, 94, 0.12);
+      --skeleton-bg: #221a13;
+      --brand-icon-fill: #f3e4cf;
+      --brand-icon-stroke: #e46f2e;
+      --brand-icon-wave: #f3e4cf;
+      --brand-icon-wave-soft: #d8c5aa;
+    }
+
+    :root[data-theme="orange-white-teal"] {
       --bg: #fffcf8;
+      --bg-2: #fff7ed;
       --panel: #ffffff;
+      --panel-2: #f8fafc;
       --text: #334155;
       --text-strong: #1e293b;
-      --muted: #94a3b8;
-      --line: #ffedd5;
+      --muted: #64748b;
+      --faint: #475569;
+      --line: #fed7aa;
+      --line-strong: #b7d0cc;
       --accent: #f97316;
+      --accent-2: #ea580c;
       --accent-soft: #fff7ed;
       --accent-hover: #fdba74;
-      --max-width: 1380px;
+      --panel-accent: #0f766e;
+      --panel-accent-soft: #ecfeff;
+      --panel-accent-hover: #0f766e;
+      --panel-hover-border: #99f6e4;
+      --content-soft: #475569;
+      --intel-title: #172554;
+      --intel-shadow: 0 18px 42px -34px rgba(15, 118, 110, 0.42);
+      --intel-action-border: rgba(15, 118, 110, 0.3);
+      --intel-action-bg: rgba(255, 255, 255, 0.82);
+      --metric-border: rgba(15, 118, 110, 0.22);
+      --modal-line: #dbe7e3;
+      --soft-control-border: #cbd5e1;
+      --news-hover-border: #fdba74;
+      --card-foot-line: #fed7aa;
+      --action-link: #f97316;
+      --action-link-active: #ea580c;
+      --badge-text: #ea580c;
+      --smart-bg: #ecfeff;
+      --smart-text: #0e7490;
       --shadow: 0 12px 35px -10px rgba(249, 115, 22, 0.12);
+      --body-bg: var(--bg);
+      --header-bg: rgba(255, 255, 255, 0.9);
+      --header-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+      --brand-shadow: 0 10px 24px -12px rgba(249, 115, 22, 0.8);
+      --control-bg: rgba(255, 255, 255, 0.92);
+      --soft-control-bg: rgba(255, 255, 255, 0.86);
+      --metric-bg: rgba(255, 255, 255, 0.72);
+      --brief-panel-bg: #fffefa;
+      --brief-panel-border: #b7d0cc;
+      --brief-action-band-bg: rgba(248, 253, 251, 0.82);
+      --brief-action-bg: rgba(255, 255, 255, 0.92);
+      --brief-action-border: #b7d0cc;
+      --brief-action-text: #0f766e;
+      --brief-action-hover-border: #0f766e;
+      --brief-action-shadow: 0 1px 0 rgba(15, 118, 110, 0.04);
+      --brief-action-active-bg: #0f766e;
+      --brief-action-active-text: #ffffff;
+      --brief-metric-bg: #ffffff;
+      --brief-metric-border: #c7dcd8;
+      --brief-metric-label: #47656c;
+      --brief-metric-value: #02063f;
+      --brief-shadow: none;
+      --focus-ring: rgba(249, 115, 22, 0.08);
+      --ping-bg: rgba(249, 115, 22, 0.4);
+      --panel-gradient: linear-gradient(135deg, rgba(240, 253, 250, 0.88), rgba(255, 255, 255, 0.94) 48%);
+      --jinse-bg: linear-gradient(180deg, #fffdf8 0%, #fff8ee 100%);
+      --jinse-border: #f0d6a6;
+      --jinse-shadow: 0 10px 30px -18px rgba(196, 139, 37, 0.22);
+      --jinse-meta: #a27b2b;
+      --jinse-dot: #e4b24a;
+      --jinse-title: #3b2b0c;
+      --jinse-summary: #695638;
+      --jinse-link: #b37b10;
+      --jinse-empty-text: #8f7b58;
+      --active-text: #ffffff;
+      --modal-backdrop-bg: rgba(15, 23, 42, 0.34);
+      --modal-shadow: 0 32px 80px -44px rgba(15, 23, 42, 0.6);
+      --success-bg: #ecfdf5;
+      --success-text: #047857;
+      --risk-bg: #fff1f2;
+      --risk-text: #be123c;
+      --red-card-bg: var(--panel);
+      --red-card-border: #e9a16d;
+      --red-card-accent: #ea580c;
+      --red-card-glow: rgba(249, 115, 22, 0.2);
+      --red-card-sheen: rgba(249, 115, 22, 0.14);
+      --red-card-title-line: rgba(234, 88, 12, 0.5);
+      --red-card-shadow: 0 18px 40px -28px rgba(180, 83, 9, 0.34), 0 0 0 1px rgba(249, 115, 22, 0.14) inset;
+      --signal-dot: #14b8a6;
+      --signal-ring: rgba(20, 184, 166, 0.1);
+      --skeleton-bg: #ffedd5;
+      --brand-icon-fill: rgba(255, 255, 255, 0.96);
+      --brand-icon-stroke: #f97316;
+      --brand-icon-wave: #ffffff;
+      --brand-icon-wave-soft: rgba(255, 255, 255, 0.82);
     }
 
     * {
@@ -30,7 +209,7 @@
 
     body {
       margin: 0;
-      background: var(--bg);
+      background: var(--body-bg);
       font-family: 'Inter', 'Noto Sans SC', sans-serif;
       -webkit-font-smoothing: antialiased;
       color: var(--text);
@@ -50,10 +229,10 @@
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(255, 255, 255, 0.9);
+      background: var(--header-bg);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--line);
-      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+      box-shadow: var(--header-shadow);
     }
 
     .header-inner,
@@ -84,11 +263,11 @@
       width: 32px;
       height: 32px;
       border-radius: 10px;
-      background: linear-gradient(135deg, #fb923c, #ea580c);
+      background: linear-gradient(135deg, var(--accent-hover), var(--accent-2));
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 10px 24px -12px rgba(249, 115, 22, 0.8);
+      box-shadow: var(--brand-shadow);
       flex: 0 0 auto;
     }
 
@@ -135,31 +314,100 @@
       min-width: 0;
     }
 
+    .header-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .header-link-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 36px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--control-bg);
+      color: var(--text-strong);
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 180ms ease;
+    }
+
+    .header-link-btn:hover {
+      color: var(--accent);
+      border-color: var(--accent-hover);
+      background: var(--accent-soft);
+      transform: translateY(-1px);
+    }
+
     .search-box {
-      width: 220px;
+      position: relative;
+      width: 38px;
       flex: 0 0 auto;
       min-width: 0;
+      transition: width 240ms ease;
+    }
+
+    .search-box:hover,
+    .search-box:focus-within {
+      width: 220px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      z-index: 1;
+      width: 16px;
+      height: 16px;
+      color: var(--muted);
+      transform: translateY(-50%);
+      pointer-events: none;
+      transition: color 180ms ease;
+    }
+
+    .search-box:hover .search-icon,
+    .search-box:focus-within .search-icon {
+      color: var(--accent);
     }
 
     .search-input {
       width: 100%;
       height: 38px;
-      padding: 0 14px;
+      padding: 0 0 0 36px;
       border: 1px solid var(--line);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.92);
+      background: var(--control-bg);
       color: var(--text);
       outline: none;
-      transition: border-color 180ms ease, box-shadow 180ms ease;
+      cursor: pointer;
+      transition: border-color 180ms ease, box-shadow 180ms ease, padding 240ms ease;
     }
 
     .search-input::placeholder {
       color: var(--muted);
+      opacity: 0;
+      transition: opacity 160ms ease;
+    }
+
+    .search-box:hover .search-input,
+    .search-box:focus-within .search-input {
+      padding-right: 14px;
+      cursor: text;
+    }
+
+    .search-box:hover .search-input::placeholder,
+    .search-box:focus-within .search-input::placeholder {
+      opacity: 1;
     }
 
     .search-input:focus {
-      border-color: #fdba74;
-      box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.08);
+      border-color: var(--accent-hover);
+      box-shadow: 0 0 0 4px var(--focus-ring);
     }
 
     .status-light {
@@ -175,7 +423,7 @@
       position: absolute;
       inset: 0;
       border-radius: inherit;
-      background: rgba(249, 115, 22, 0.4);
+      background: var(--ping-bg);
       animation: ping 1.8s ease-out infinite;
     }
 
@@ -199,6 +447,38 @@
     .icon-btn:hover {
       color: var(--accent);
       background: var(--accent-soft);
+    }
+
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      width: 36px;
+      min-height: 36px;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--control-bg);
+      color: var(--text-strong);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 180ms ease;
+    }
+
+    .theme-toggle:hover {
+      color: var(--accent);
+      border-color: var(--accent-hover);
+      background: var(--accent-soft);
+      transform: translateY(-1px);
+    }
+
+    .theme-toggle svg {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
     }
 
     .icon-btn svg {
@@ -225,26 +505,33 @@
 
     .intelligence-panel {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 360px;
-      gap: 24px;
-      align-items: stretch;
+      grid-template-columns: minmax(480px, 0.7fr) minmax(680px, 1fr);
+      gap: 32px;
+      align-items: center;
       margin-bottom: 18px;
-      padding: 22px 24px;
-      border: 1px solid #dbe7e3;
+      min-height: 150px;
+      padding: 32px 14px;
+      border: 1px solid var(--brief-panel-border);
       border-radius: 14px;
-      background:
-        linear-gradient(135deg, rgba(240, 253, 250, 0.88), rgba(255, 255, 255, 0.94) 48%),
-        #ffffff;
-      box-shadow: 0 18px 42px -34px rgba(15, 118, 110, 0.42);
+      background: var(--brief-panel-bg);
+      box-shadow: var(--brief-shadow);
     }
 
     .intelligence-panel > * {
       min-width: 0;
     }
 
+    .intelligence-panel > div:first-child {
+      min-height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--brief-action-band-bg);
+    }
+
     .intel-kicker,
     .section-label {
-      color: #0f766e;
+      color: var(--panel-accent);
       font-size: 12px;
       font-weight: 700;
       letter-spacing: 0.08em;
@@ -253,7 +540,7 @@
 
     .intel-headline {
       margin: 7px 0 8px;
-      color: #172554;
+      color: var(--intel-title);
       font-size: 24px;
       line-height: 1.38;
       font-weight: 700;
@@ -263,42 +550,51 @@
 
     .intel-summary {
       margin: 0;
-      color: #475569;
+      color: var(--content-soft);
       font-size: 14px;
       line-height: 1.75;
       overflow-wrap: anywhere;
     }
 
+    .intelligence-panel .intel-kicker,
+    .intelligence-panel .intel-headline,
+    .intelligence-panel .intel-summary {
+      display: none;
+    }
+
     .intel-actions {
       display: flex;
       align-items: center;
+      justify-content: center;
       flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 16px;
+      gap: 10px;
+      margin-top: 0;
     }
 
     .intel-action-btn {
       min-height: 34px;
-      padding: 0 12px;
-      border: 1px solid rgba(15, 118, 110, 0.2);
+      padding: 0 14px;
+      border: 1px solid var(--brief-action-border);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.82);
-      color: #0f766e;
+      background: var(--brief-action-bg);
+      color: var(--brief-action-text);
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
-      transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+      box-shadow: var(--brief-action-shadow);
+      transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
     }
 
     .intel-action-btn:hover {
       transform: translateY(-1px);
-      border-color: #0f766e;
+      border-color: var(--brief-action-hover-border);
+      box-shadow: 0 8px 18px -14px color-mix(in srgb, var(--brief-action-hover-border), transparent 45%);
     }
 
     .intel-action-btn.is-active {
-      border-color: #0f766e;
-      background: #0f766e;
-      color: #ffffff;
+      border-color: var(--brief-action-active-bg);
+      background: var(--brief-action-active-bg);
+      color: var(--brief-action-active-text);
     }
 
     .modal-backdrop {
@@ -309,7 +605,7 @@
       align-items: center;
       justify-content: center;
       padding: 24px;
-      background: rgba(15, 23, 42, 0.34);
+      background: var(--modal-backdrop-bg);
       backdrop-filter: blur(10px);
     }
 
@@ -323,9 +619,9 @@
       display: flex;
       flex-direction: column;
       border-radius: 14px;
-      background: #ffffff;
-      border: 1px solid #dbe7e3;
-      box-shadow: 0 32px 80px -44px rgba(15, 23, 42, 0.6);
+      background: var(--panel);
+      border: 1px solid var(--line-strong);
+      box-shadow: var(--modal-shadow);
       overflow: hidden;
       animation: modal-in 180ms ease forwards;
     }
@@ -336,19 +632,32 @@
       justify-content: space-between;
       gap: 18px;
       padding: 20px 22px 14px;
-      border-bottom: 1px solid #eef2f0;
+      border-bottom: 1px solid var(--modal-line);
     }
 
     .modal-head h2 {
       margin: 0;
-      color: #0f172a;
+      color: var(--intel-title);
       font-size: 20px;
       line-height: 1.35;
     }
 
+    .modal-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .modal-brief-btn {
+      min-height: 30px;
+      padding: 0 12px;
+      flex: 0 0 auto;
+    }
+
     .modal-head p {
       margin: 5px 0 0;
-      color: #64748b;
+      color: var(--faint);
       font-size: 13px;
       line-height: 1.6;
     }
@@ -358,8 +667,8 @@
       min-height: 34px;
       border: 0;
       border-radius: 999px;
-      background: #f8fafc;
-      color: #64748b;
+      background: var(--panel-2);
+      color: var(--muted);
       cursor: pointer;
       font-size: 22px;
       line-height: 1;
@@ -368,8 +677,8 @@
     }
 
     .modal-close:hover {
-      background: #ecfeff;
-      color: #0f766e;
+      background: var(--panel-accent-soft);
+      color: var(--panel-accent-hover);
     }
 
     .highlight-list {
@@ -384,7 +693,7 @@
       grid-template-columns: 30px minmax(0, 1fr);
       gap: 12px;
       padding: 16px 0;
-      border-bottom: 1px solid #eef2f0;
+      border-bottom: 1px solid var(--modal-line);
     }
 
     .highlight-item:last-child {
@@ -398,15 +707,15 @@
       align-items: center;
       justify-content: center;
       border-radius: 999px;
-      background: #ecfeff;
-      color: #0f766e;
+      background: var(--panel-accent-soft);
+      color: var(--panel-accent-hover);
       font-size: 12px;
       font-weight: 800;
     }
 
     .highlight-title {
       margin: 0;
-      color: #0f172a;
+      color: var(--intel-title);
       font-size: 15px;
       line-height: 1.55;
       font-weight: 700;
@@ -419,27 +728,34 @@
       flex-wrap: wrap;
       gap: 8px;
       margin: 7px 0 0;
-      color: #64748b;
+      color: var(--faint);
       font-size: 12px;
       line-height: 1.5;
     }
 
     .highlight-summary {
       margin: 8px 0 0;
-      color: #475569;
+      color: var(--content-soft);
       font-size: 13px;
       line-height: 1.75;
       overflow-wrap: anywhere;
     }
 
+    .highlight-summary.is-collapsed {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      overflow: hidden;
+    }
+
     .highlight-link {
-      color: #0f766e;
+      color: var(--panel-accent-hover);
       font-weight: 700;
     }
 
     .intel-metrics {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 10px;
       align-content: stretch;
       min-width: 0;
@@ -448,23 +764,23 @@
     .intel-metric {
       min-width: 0;
       min-height: 82px;
-      padding: 12px 14px;
+      padding: 13px 15px;
       border-radius: 10px;
-      background: rgba(255, 255, 255, 0.72);
-      border: 1px solid rgba(15, 118, 110, 0.12);
+      background: var(--brief-metric-bg);
+      border: 1px solid var(--brief-metric-border);
     }
 
     .intel-metric span {
       display: block;
-      color: #64748b;
+      color: var(--brief-metric-label);
       font-size: 12px;
       line-height: 1.3;
     }
 
     .intel-metric strong {
       display: block;
-      margin-top: 8px;
-      color: #0f172a;
+      margin-top: 9px;
+      color: var(--brief-metric-value);
       font-size: 20px;
       line-height: 1.1;
       font-weight: 700;
@@ -491,16 +807,24 @@
       flex-wrap: wrap;
     }
 
+    .sort-switch {
+      justify-content: flex-end;
+    }
+
     .topic-btn,
     .sort-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       min-height: 34px;
       padding: 0 12px;
-      border: 1px solid #dbe7e3;
+      border: 1px solid var(--soft-control-border);
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.86);
-      color: #475569;
+      background: var(--soft-control-bg);
+      color: var(--muted);
       font-size: 12px;
       font-weight: 600;
+      line-height: 1;
       cursor: pointer;
       transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
     }
@@ -508,15 +832,15 @@
     .topic-btn:hover,
     .sort-btn:hover {
       transform: translateY(-1px);
-      border-color: #99f6e4;
-      color: #0f766e;
+      border-color: var(--panel-hover-border);
+      color: var(--panel-accent-hover);
     }
 
     .topic-btn.is-active,
     .sort-btn.is-active {
-      border-color: #0f766e;
-      background: #0f766e;
-      color: #ffffff;
+      border-color: var(--panel-accent);
+      background: var(--panel-accent);
+      color: var(--active-text);
     }
 
     .news-grid {
@@ -540,9 +864,9 @@
       min-height: 188px;
       padding: 16px 16px 14px;
       border-radius: 16px;
-      border: 1px solid #f8e7c8;
-      background: linear-gradient(180deg, #fffdf8 0%, #fff8ee 100%);
-      box-shadow: 0 10px 30px -18px rgba(196, 139, 37, 0.22);
+      border: 1px solid var(--jinse-border);
+      background: var(--jinse-bg);
+      box-shadow: var(--jinse-shadow);
     }
 
     .jinse-meta {
@@ -551,7 +875,7 @@
       justify-content: space-between;
       gap: 12px;
       margin-bottom: 10px;
-      color: #a27b2b;
+      color: var(--jinse-meta);
       font-size: 12px;
     }
 
@@ -567,13 +891,13 @@
       width: 6px;
       height: 6px;
       border-radius: 999px;
-      background: #e4b24a;
+      background: var(--jinse-dot);
       flex: 0 0 auto;
     }
 
     .jinse-card h3 {
       margin: 0 0 10px;
-      color: #3b2b0c;
+      color: var(--jinse-title);
       font-size: 14px;
       line-height: 1.5;
       overflow-wrap: anywhere;
@@ -581,7 +905,7 @@
 
     .jinse-summary {
       margin: 0;
-      color: #695638;
+      color: var(--jinse-summary);
       font-size: 12px;
       line-height: 1.7;
       overflow-wrap: anywhere;
@@ -592,6 +916,15 @@
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 4;
       overflow: hidden;
+    }
+
+    .jinse-summary:not(.is-collapsed),
+    .news-summary:not(.is-collapsed) {
+      display: block;
+      overflow: visible;
+      -webkit-line-clamp: unset;
+      -webkit-box-orient: initial;
+      flex: 0 0 auto;
     }
 
     .jinse-actions {
@@ -607,7 +940,7 @@
       align-items: center;
       gap: 6px;
       margin-top: 0;
-      color: #b37b10;
+      color: var(--jinse-link);
       font-size: 12px;
       font-weight: 600;
     }
@@ -628,14 +961,15 @@
     .jinse-empty {
       padding: 24px 18px;
       border-radius: 16px;
-      border: 1px solid #f8e7c8;
-      background: linear-gradient(180deg, #fffdf8 0%, #fff8ee 100%);
-      color: #8f7b58;
+      border: 1px solid var(--jinse-border);
+      background: var(--jinse-bg);
+      color: var(--jinse-empty-text);
       font-size: 13px;
       line-height: 1.7;
     }
 
     .news-card {
+      position: relative;
       display: flex;
       flex-direction: column;
       min-height: 260px;
@@ -652,7 +986,50 @@
     .news-card:hover {
       transform: translateY(-3px);
       box-shadow: var(--shadow);
-      border-color: var(--accent-hover);
+      border-color: var(--news-hover-border);
+    }
+
+    .news-card.is-red {
+      border-color: var(--red-card-border);
+      background:
+        radial-gradient(180px 90px at 100% 0%, var(--red-card-sheen), transparent 62%),
+        var(--red-card-bg);
+      box-shadow: var(--red-card-shadow);
+      overflow: hidden;
+    }
+
+    .news-card.is-red::before {
+      content: "";
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 34px;
+      height: 34px;
+      border-top: 1px solid var(--red-card-accent);
+      border-right: 1px solid var(--red-card-accent);
+      border-top-right-radius: 12px;
+      opacity: 0.58;
+    }
+
+    .news-card.is-red::after {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 15px;
+      box-shadow: 0 0 0 1px var(--red-card-glow) inset, 0 0 28px var(--red-card-glow) inset;
+      pointer-events: none;
+    }
+
+    .news-card.is-red:hover {
+      border-color: var(--red-card-accent);
+      box-shadow: var(--red-card-shadow);
+    }
+
+    .news-card.is-red .news-title {
+      text-decoration: underline;
+      text-decoration-color: var(--red-card-title-line);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 5px;
     }
 
     .card-head {
@@ -673,7 +1050,7 @@
 
     .source {
       font-size: 12px;
-      color: #94a3b8;
+      color: var(--muted);
       display: inline-flex;
       align-items: center;
       gap: 6px;
@@ -694,64 +1071,43 @@
       padding: 0 9px;
       border-radius: 999px;
       background: var(--accent-soft);
-      color: #ea580c;
+      color: var(--badge-text);
       font-size: 11px;
       font-weight: 700;
     }
 
     .badge.smart {
-      background: #ecfeff;
-      color: #0e7490;
+      background: var(--smart-bg);
+      color: var(--smart-text);
     }
 
     .badge.risk {
-      background: #fff1f2;
-      color: #be123c;
+      background: var(--risk-bg);
+      color: var(--risk-text);
     }
 
     .badge.good {
-      background: #ecfdf5;
-      color: #047857;
-    }
-
-    .smart-line {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 0 0 12px;
-      color: #64748b;
-      font-size: 12px;
-      line-height: 1.5;
-      overflow-wrap: anywhere;
-    }
-
-    .smart-line::before {
-      content: "";
-      width: 7px;
-      height: 7px;
-      border-radius: 999px;
-      background: #14b8a6;
-      box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.1);
-      flex: 0 0 auto;
+      background: var(--success-bg);
+      color: var(--success-text);
     }
 
     .side-heading {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 0 2px;
+      padding: 0;
     }
 
     .side-heading h2 {
       margin: 0;
-      color: #1e293b;
+      color: var(--text-strong);
       font-size: 14px;
       line-height: 1.3;
     }
 
     .side-heading span {
-      color: #94a3b8;
+      color: var(--muted);
       font-size: 12px;
       white-space: nowrap;
     }
@@ -765,12 +1121,199 @@
       overflow-wrap: anywhere;
     }
 
+    .news-title-button {
+      display: inline;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      line-height: inherit;
+      text-align: left;
+      cursor: pointer;
+      overflow-wrap: anywhere;
+      transition: color 180ms ease, text-decoration-color 180ms ease;
+    }
+
+    .news-title-button:hover {
+      color: var(--panel-accent-hover);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 5px;
+    }
+
+    .news-image-link {
+      display: block;
+      width: 100%;
+      padding: 0;
+      margin: 0 0 14px;
+      border-radius: 10px;
+      border: 1px solid var(--card-foot-line);
+      background: var(--panel-2);
+      overflow: hidden;
+      cursor: zoom-in;
+    }
+
+    .news-image {
+      display: block;
+      width: 100%;
+      max-height: 360px;
+      object-fit: contain;
+      background: var(--panel-2);
+    }
+
+    .image-modal {
+      width: min(1080px, 100%);
+      max-height: min(860px, calc(100svh - 48px));
+      display: flex;
+      flex-direction: column;
+      border-radius: 14px;
+      background: var(--panel);
+      border: 1px solid var(--line-strong);
+      box-shadow: var(--modal-shadow);
+      overflow: hidden;
+      animation: modal-in 180ms ease forwards;
+    }
+
+    .image-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--modal-line);
+    }
+
+    .image-modal-title {
+      margin: 0;
+      color: var(--text-strong);
+      font-size: 14px;
+      line-height: 1.5;
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .image-modal-body {
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      overflow: auto;
+      background: var(--bg);
+    }
+
+    .image-modal-body img {
+      display: block;
+      max-width: 100%;
+      max-height: calc(100svh - 150px);
+      object-fit: contain;
+    }
+
+    .jingji-article-modal {
+      width: min(900px, 100%);
+      max-height: min(880px, calc(100svh - 48px));
+      display: flex;
+      flex-direction: column;
+      border-radius: 14px;
+      background: var(--panel);
+      border: 1px solid var(--line-strong);
+      box-shadow: var(--modal-shadow);
+      overflow: hidden;
+      animation: modal-in 180ms ease forwards;
+    }
+
+    .jingji-article-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 20px 22px 16px;
+      border-bottom: 1px solid var(--modal-line);
+    }
+
+    .jingji-article-kicker {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--panel-accent-hover);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .jingji-article-title {
+      margin: 0;
+      color: var(--text-strong);
+      font-size: 21px;
+      line-height: 1.5;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .jingji-article-body {
+      overflow: auto;
+      padding: 22px 24px 32px;
+      background: var(--panel);
+    }
+
+    .jingji-article-meta,
+    .jingji-article-content {
+      width: min(720px, 100%);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .jingji-article-meta {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin-bottom: 20px;
+      color: var(--faint);
+      font-size: 12px;
+    }
+
+    .jingji-article-meta a {
+      margin-left: auto;
+      color: var(--action-link);
+      font-weight: 700;
+    }
+
+    .jingji-article-content p {
+      margin: 0 0 18px;
+      color: var(--content-soft);
+      font-size: 16px;
+      line-height: 1.95;
+      text-align: justify;
+      overflow-wrap: anywhere;
+    }
+
+    .jingji-article-content img {
+      display: block;
+      width: 100%;
+      height: auto;
+      margin: 8px 0 22px;
+      border-radius: 8px;
+      background: var(--panel-2);
+      object-fit: contain;
+    }
+
+    .jingji-article-status {
+      width: min(720px, 100%);
+      margin: 0 auto;
+      padding: 56px 16px;
+      color: var(--faint);
+      font-size: 14px;
+      line-height: 1.7;
+      text-align: center;
+    }
+
     .news-summary {
       margin: 0;
-      color: #475569;
+      color: var(--content-soft);
       font-size: 14px;
       line-height: 1.8;
-      flex: 1 1 auto;
+      flex: 0 0 auto;
       text-align: justify;
       overflow-wrap: anywhere;
     }
@@ -789,7 +1332,7 @@
       margin-left: auto;
       border: 0;
       background: transparent;
-      color: #f97316;
+      color: var(--action-link);
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
@@ -799,7 +1342,7 @@
     }
 
     .summary-toggle:hover {
-      color: #ea580c;
+      color: var(--action-link-active);
     }
 
     .card-foot {
@@ -808,12 +1351,11 @@
       justify-content: space-between;
       gap: 12px;
       margin-top: 18px;
-      padding-top: 14px;
-      border-top: 1px solid #fff3e8;
+      padding-top: 2px;
     }
 
     .time {
-      color: #94a3b8;
+      color: var(--muted);
       font-size: 12px;
     }
 
@@ -827,7 +1369,7 @@
     .read-btn {
       border: 0;
       background: transparent;
-      color: #f97316;
+      color: var(--action-link);
       font-size: 12px;
       font-weight: 600;
       display: inline-flex;
@@ -844,11 +1386,11 @@
     }
 
     .read-btn.is-active {
-      color: #ea580c;
+      color: var(--action-link-active);
     }
 
     .read-link {
-      color: #ea580c;
+      color: var(--action-link-active);
       font-size: 12px;
       font-weight: 600;
       display: inline-flex;
@@ -867,11 +1409,11 @@
       padding: 24px;
       border-radius: 16px;
       border: 1px solid var(--line);
-      background: #fff;
+      background: var(--panel);
     }
 
     .skeleton {
-      background: #ffedd5;
+      background: var(--skeleton-bg);
       border-radius: 6px;
       animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
@@ -895,7 +1437,7 @@
       display: none;
       text-align: center;
       padding: 96px 20px;
-      color: #94a3b8;
+      color: var(--muted);
     }
 
     .empty-state.is-visible {
@@ -918,7 +1460,7 @@
       padding: 0 18px;
       border-radius: 999px;
       border: 1px solid var(--line);
-      background: #fff;
+      background: var(--panel);
       color: var(--text);
       cursor: pointer;
       transition: background 180ms ease, transform 180ms ease;
@@ -994,8 +1536,13 @@
       }
 
       .search-box {
-        flex: 1 1 auto;
-        width: auto;
+        flex: 0 0 auto;
+        width: 38px;
+      }
+
+      .search-box:hover,
+      .search-box:focus-within {
+        width: min(220px, 100%);
       }
 
       .content-layout,
@@ -1006,11 +1553,36 @@
 
       .intelligence-panel {
         grid-template-columns: 1fr;
+        gap: 14px;
+        min-height: 0;
+        padding: 18px;
+      }
+
+      .intelligence-panel > div:first-child {
+        min-height: 78px;
+      }
+
+      .intel-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       .control-row {
         align-items: flex-start;
-        flex-direction: column;
+        gap: 12px;
+      }
+
+      .sort-switch {
+        transform: none;
+        justify-content: flex-end;
+      }
+
+      .side-heading {
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .side-panel {
+        transform: none;
       }
 
       .side-more-wrap {
@@ -1034,14 +1606,14 @@
 
       .header-inner {
         gap: 8px;
-        flex-wrap: nowrap;
-        align-items: center;
-        justify-content: space-between;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: flex-start;
       }
 
       .brand {
-        width: auto;
-        flex: 1 1 auto;
+        width: 100%;
+        flex: 1 1 100%;
         gap: 8px;
       }
 
@@ -1090,14 +1662,33 @@
       }
 
       .header-actions {
-        width: auto;
-        flex: 0 0 auto;
-        margin-left: auto;
+        width: 100%;
+        flex: 1 1 100%;
+        justify-content: flex-start;
+        margin-left: 0;
         gap: 8px;
+        flex-wrap: wrap;
       }
 
       .search-box {
         display: none;
+      }
+
+      .header-links {
+        gap: 6px;
+      }
+
+      .header-link-btn {
+        min-height: 32px;
+        padding: 0 9px;
+        font-size: 12px;
+      }
+
+      .theme-toggle {
+        width: 32px;
+        min-height: 32px;
+        padding: 0;
+        font-size: 12px;
       }
 
       .status-light {
@@ -1123,10 +1714,6 @@
         border-radius: 12px;
       }
 
-      .intel-headline {
-        font-size: 20px;
-      }
-
       .intel-metrics {
         grid-template-columns: 1fr 1fr;
       }
@@ -1149,6 +1736,23 @@
 
       .highlight-list {
         padding: 0 18px 16px;
+      }
+
+      .jingji-article-head {
+        padding: 16px 18px 13px;
+      }
+
+      .jingji-article-title {
+        font-size: 18px;
+      }
+
+      .jingji-article-body {
+        padding: 18px 18px 28px;
+      }
+
+      .jingji-article-content p {
+        font-size: 15px;
+        line-height: 1.9;
       }
 
       .topic-tabs {
@@ -1239,12 +1843,13 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none">
-            <rect x="4.25" y="5" width="10.5" height="14" rx="3" fill="rgba(255,255,255,0.96)"/>
-            <path d="M8 9.25H11.5" stroke="#F97316" stroke-width="1.8" stroke-linecap="round"/>
-            <path d="M8 12H11.5" stroke="#F97316" stroke-width="1.8" stroke-linecap="round"/>
-            <path d="M8 14.75H10.75" stroke="#F97316" stroke-width="1.8" stroke-linecap="round"/>
-            <path d="M17.25 8.5C18.45 9.5 19 10.67 19 12C19 13.33 18.45 14.5 17.25 15.5" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-            <path d="M19.5 6.25C21.24 7.92 22 9.84 22 12C22 14.16 21.24 16.08 19.5 17.75" stroke="rgba(255,255,255,0.82)" stroke-width="1.6" stroke-linecap="round"/>
+            <path d="M6.2 5.25h7.1l3.5 3.45v9.05a1.9 1.9 0 0 1-1.9 1.9H6.2a1.9 1.9 0 0 1-1.9-1.9V7.15a1.9 1.9 0 0 1 1.9-1.9Z" fill="var(--brand-icon-fill)"/>
+            <path d="M13.25 5.45v2.6c0 .55.45 1 1 1h2.45" stroke="var(--brand-icon-stroke)" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7.1 14.5 9.15 12.45l1.75 1.55 3.05-3.55" stroke="var(--brand-icon-stroke)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12.55 10.45h1.4v1.4" stroke="var(--brand-icon-stroke)" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7.2 8.9h4.15" stroke="var(--brand-icon-stroke)" stroke-width="1.45" stroke-linecap="round"/>
+            <path d="M18.4 9.1c.95.86 1.42 1.86 1.42 3s-.47 2.14-1.42 3" stroke="var(--brand-icon-wave)" stroke-width="1.55" stroke-linecap="round"/>
+            <path d="M20.45 7.25c1.42 1.35 2.05 2.9 2.05 4.85 0 1.95-.63 3.5-2.05 4.85" stroke="var(--brand-icon-wave-soft)" stroke-width="1.35" stroke-linecap="round"/>
           </svg>
         </div>
         <div>
@@ -1253,9 +1858,23 @@
         </div>
       </div>
       <div class="header-actions">
+        <nav class="header-links" aria-label="外部资讯入口">
+          <a class="header-link-btn" href="https://www.perplexity.ai/discover/tech" target="_blank" rel="noopener noreferrer">perplexity</a>
+          <a class="header-link-btn" href="https://cn.wsj.com/" target="_blank" rel="noopener noreferrer">华尔街日报</a>
+        </nav>
         <label class="search-box" for="searchInput">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/>
+            <path stroke-linecap="round" d="m16.65 16.65 4.1 4.1"/>
+          </svg>
           <input class="search-input" id="searchInput" type="search" placeholder="风险 半导体 / 近1小时 AI" autocomplete="off">
         </label>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换主题">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.2m0 13.6V21m6.36-15.36-1.56 1.56M7.2 16.8l-1.56 1.56M21 12h-2.2M5.2 12H3m15.36 6.36-1.56-1.56M7.2 7.2 5.64 5.64"/>
+            <circle cx="12" cy="12" r="4"/>
+          </svg>
+        </button>
         <span class="status-light" aria-hidden="true"></span>
         <button class="icon-btn" id="refreshBtn" type="button" aria-label="刷新新闻">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1276,7 +1895,6 @@
           <div class="intel-actions" id="intelActions" aria-label="智能操作">
             <button class="intel-action-btn" type="button" data-quick-filter="high">只看高影响</button>
             <button class="intel-action-btn" type="button" data-quick-filter="risk">只看风险</button>
-            <button class="intel-action-btn" type="button" data-intel-command="read-brief">朗读简报</button>
             <button class="intel-action-btn" type="button" data-intel-command="show-highlights">今日重点</button>
           </div>
         </div>
@@ -1300,16 +1918,11 @@
         </div>
       </section>
 
-      <div class="control-row">
-        <div class="topic-tabs" id="topicTabs" aria-label="主题筛选"></div>
-        <div class="sort-switch" aria-label="排序方式">
-          <button class="sort-btn is-active" type="button" data-sort-mode="smart">智能排序</button>
-          <button class="sort-btn" type="button" data-sort-mode="latest">最新优先</button>
-        </div>
-      </div>
-
       <div class="content-layout">
         <section>
+          <div class="control-row">
+            <div class="topic-tabs" id="topicTabs" aria-label="主题筛选"></div>
+          </div>
           <div class="news-grid" id="newsGrid"></div>
           <div class="empty-state" id="emptyState">暂无最新数据</div>
         </section>
@@ -1317,16 +1930,16 @@
         <aside class="side-panel">
           <div class="side-heading">
             <h2>数字资产快讯</h2>
-            <span>金色财经</span>
+            <div class="sort-switch" aria-label="排序方式">
+              <button class="sort-btn is-active" type="button" data-sort-mode="smart">智能排序</button>
+              <button class="sort-btn" type="button" data-sort-mode="latest">最新优先</button>
+            </div>
           </div>
           <div class="jinse-list" id="jinseList"></div>
           <div class="more-wrap side-more-wrap">
             <button class="more-btn" id="jinseMoreBtn" type="button" hidden>加载更多</button>
           </div>
         </aside>
-      </div>
-      <div class="more-wrap">
-        <button class="more-btn" id="moreBtn" type="button">加载更多</button>
       </div>
     </div>
   </main>
@@ -1335,7 +1948,10 @@
     <div class="highlights-modal">
       <div class="modal-head">
         <div>
-          <h2 id="highlightsTitle">今日重点</h2>
+          <div class="modal-title-row">
+            <h2 id="highlightsTitle">今日重点</h2>
+            <button class="intel-action-btn modal-brief-btn" type="button" id="highlightsBriefBtn" data-intel-command="read-brief">&#26391;&#35835;&#31616;&#25253;</button>
+          </div>
           <p id="highlightsSubtitle">按智能影响力排序展示今日值得优先查看的新闻。</p>
         </div>
         <button class="modal-close" type="button" id="highlightsCloseBtn" aria-label="关闭今日重点">×</button>
@@ -1344,8 +1960,45 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="imageModal" role="dialog" aria-modal="true" aria-labelledby="imageModalTitle" hidden>
+    <div class="image-modal">
+      <div class="image-modal-head">
+        <h2 class="image-modal-title" id="imageModalTitle"></h2>
+        <button class="modal-close" type="button" id="imageModalCloseBtn" aria-label="关闭图片预览">×</button>
+      </div>
+      <div class="image-modal-body">
+        <img id="imageModalImg" src="" alt="">
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="jingjiArticleModal" role="dialog" aria-modal="true" aria-labelledby="jingjiArticleTitle" hidden>
+    <div class="jingji-article-modal">
+      <div class="jingji-article-head">
+        <div>
+          <span class="jingji-article-kicker">21财经</span>
+          <h2 class="jingji-article-title" id="jingjiArticleTitle"></h2>
+        </div>
+        <button class="modal-close" type="button" id="jingjiArticleCloseBtn" aria-label="关闭文章阅读">×</button>
+      </div>
+      <div class="jingji-article-body" id="jingjiArticleBody"></div>
+    </div>
+  </div>
+
   <script>
     (function () {
+      const THEME_STORAGE_KEY = "peopleFinanceTheme";
+      const THEMES = {
+        "deep-coffee-gold": {
+          label: "深咖金主题",
+          next: "orange-white-teal"
+        },
+        "orange-white-teal": {
+          label: "橙白青主题",
+          next: "deep-coffee-gold"
+        }
+      };
+
       const state = {
         items: [],
         visibleCount: 36,
@@ -1362,19 +2015,23 @@
         speechAudio: null,
         speechObjectUrl: null,
         speechAbortController: null,
+        articleAbortController: null,
         statusText: "正在连接实时新闻接口",
         expandedIds: new Set(),
         activeTopic: "all",
-        sortMode: "smart"
+        sortMode: "smart",
+        theme: normalizeTheme(document.documentElement.dataset.theme)
       };
+
+      const BRIEF_SPEECH_ID = "brief:highlights";
 
       const els = {
         headerStamp: document.getElementById("headerStamp"),
         searchInput: document.getElementById("searchInput"),
         refreshBtn: document.getElementById("refreshBtn"),
+        themeToggle: document.getElementById("themeToggle"),
         newsGrid: document.getElementById("newsGrid"),
         emptyState: document.getElementById("emptyState"),
-        moreBtn: document.getElementById("moreBtn"),
         jinseMoreBtn: document.getElementById("jinseMoreBtn"),
         jinseList: document.getElementById("jinseList"),
         topicTabs: document.getElementById("topicTabs"),
@@ -1386,9 +2043,18 @@
         intelRisk: document.getElementById("intelRisk"),
         intelSources: document.getElementById("intelSources"),
         highlightsModal: document.getElementById("highlightsModal"),
+        highlightsBriefBtn: document.getElementById("highlightsBriefBtn"),
         highlightsCloseBtn: document.getElementById("highlightsCloseBtn"),
         highlightsList: document.getElementById("highlightsList"),
-        highlightsSubtitle: document.getElementById("highlightsSubtitle")
+        highlightsSubtitle: document.getElementById("highlightsSubtitle"),
+        imageModal: document.getElementById("imageModal"),
+        imageModalCloseBtn: document.getElementById("imageModalCloseBtn"),
+        imageModalImg: document.getElementById("imageModalImg"),
+        imageModalTitle: document.getElementById("imageModalTitle"),
+        jingjiArticleModal: document.getElementById("jingjiArticleModal"),
+        jingjiArticleCloseBtn: document.getElementById("jingjiArticleCloseBtn"),
+        jingjiArticleTitle: document.getElementById("jingjiArticleTitle"),
+        jingjiArticleBody: document.getElementById("jingjiArticleBody")
       };
 
       const TOPIC_RULES = [
@@ -1401,14 +2067,26 @@
         { id: "crypto", label: "数字资产", keywords: ["比特币", "BTC", "ETH", "以太坊", "区块链", "加密", "稳定币", "ETF", "链上", "Web3"] }
       ];
 
+      const SOURCE_FILTERS = [
+        { id: "source:keji", label: "风向旗参考快讯", source: "风向旗参考快讯" },
+        { id: "source:starmarket", label: "科创板日报", source: "科创板日报" },
+        { id: "source:jingji-global", label: "21财经·全球", source: "21财经" }
+      ];
+
       const HIGH_IMPACT_KEYWORDS = ["重大", "突发", "首个", "首次", "创新高", "大幅", "涨停", "跌停", "暴涨", "暴跌", "并购", "重组", "签约", "中标", "订单", "业绩", "净利", "增长", "减持", "增持", "处罚", "调查", "违约", "退市", "暂停"];
       const POSITIVE_KEYWORDS = ["增长", "提升", "创新高", "涨停", "上调", "批准", "中标", "签约", "增持", "盈利", "复苏", "突破"];
       const RISK_KEYWORDS = ["风险", "下跌", "跌停", "暴跌", "处罚", "调查", "违约", "亏损", "减持", "退市", "暂停", "召回", "预警"];
 
+      applyTheme(state.theme);
       renderTopicTabs();
 
       els.refreshBtn.addEventListener("click", function () {
         loadNews(true);
+      });
+
+      els.themeToggle.addEventListener("click", function () {
+        const currentTheme = normalizeTheme(state.theme);
+        applyTheme(THEMES[currentTheme].next, true);
       });
 
       els.searchInput.addEventListener("input", function (event) {
@@ -1435,10 +2113,14 @@
 
         const command = commandButton.getAttribute("data-intel-command");
         if (command === "read-brief") {
-          toggleBriefSpeech(commandButton);
+          toggleBriefSpeech();
         } else if (command === "show-highlights") {
           openHighlightsModal();
         }
+      });
+
+      els.highlightsBriefBtn.addEventListener("click", function () {
+        toggleBriefSpeech();
       });
 
       els.highlightsCloseBtn.addEventListener("click", closeHighlightsModal);
@@ -1449,8 +2131,38 @@
         }
       });
 
+      els.highlightsList.addEventListener("click", function (event) {
+        const toggleButton = event.target.closest("[data-summary-toggle-id]");
+        if (toggleButton) {
+          toggleSummary(toggleButton);
+        }
+      });
+
+      els.imageModalCloseBtn.addEventListener("click", closeImageModal);
+
+      els.imageModal.addEventListener("click", function (event) {
+        if (event.target === els.imageModal) {
+          closeImageModal();
+        }
+      });
+
+      els.jingjiArticleCloseBtn.addEventListener("click", closeJingjiArticleModal);
+
+      els.jingjiArticleModal.addEventListener("click", function (event) {
+        if (event.target === els.jingjiArticleModal) {
+          closeJingjiArticleModal();
+        }
+      });
+
       window.addEventListener("keydown", function (event) {
-        if (event.key === "Escape" && els.highlightsModal.classList.contains("is-visible")) {
+        if (event.key !== "Escape") {
+          return;
+        }
+        if (els.jingjiArticleModal.classList.contains("is-visible")) {
+          closeJingjiArticleModal();
+        } else if (els.imageModal.classList.contains("is-visible")) {
+          closeImageModal();
+        } else if (els.highlightsModal.classList.contains("is-visible")) {
           closeHighlightsModal();
         }
       });
@@ -1476,9 +2188,27 @@
       });
 
       els.newsGrid.addEventListener("click", function (event) {
+        const articleButton = event.target.closest("[data-jingji-article-url]");
+        if (articleButton) {
+          openJingjiArticleModal(
+            articleButton.getAttribute("data-jingji-article-url") || "",
+            articleButton.getAttribute("data-jingji-article-title") || ""
+          );
+          return;
+        }
+
+        const imageButton = event.target.closest("[data-image-preview]");
+        if (imageButton) {
+          openImageModal(
+            imageButton.getAttribute("data-image-preview") || "",
+            imageButton.getAttribute("data-image-title") || ""
+          );
+          return;
+        }
+
         const toggleButton = event.target.closest("[data-summary-toggle-id]");
         if (toggleButton) {
-          toggleSummary(toggleButton.getAttribute("data-summary-toggle-id"));
+          toggleSummary(toggleButton);
           return;
         }
 
@@ -1494,7 +2224,7 @@
       els.jinseList.addEventListener("click", function (event) {
         const toggleButton = event.target.closest("[data-summary-toggle-id]");
         if (toggleButton) {
-          toggleSummary(toggleButton.getAttribute("data-summary-toggle-id"));
+          toggleSummary(toggleButton);
           return;
         }
 
@@ -1507,24 +2237,18 @@
         toggleSpeech(id);
       });
 
-      els.moreBtn.addEventListener("click", function () {
-        const previousCount = state.visibleCount;
-        const previousJinseCount = state.visibleJinseCount;
-        state.visibleCount += 12;
-        state.visibleJinseCount += 6;
-        appendMoreItems(previousCount);
-        appendMoreJinse(previousJinseCount);
-        syncMoreButton();
-        syncJinseMoreButton();
-      });
-
       els.jinseMoreBtn.addEventListener("click", function () {
         const previousJinseCount = state.visibleJinseCount;
         state.visibleJinseCount += 6;
         appendMoreJinse(previousJinseCount);
-        syncMoreButton();
         syncJinseMoreButton();
       });
+
+      window.addEventListener("scroll", function () {
+        if (isNearPageBottom()) {
+          loadMoreNews();
+        }
+      }, { passive: true });
 
       window.addEventListener("beforeunload", function () {
         stopSpeech();
@@ -1536,6 +2260,25 @@
         loadNews(false);
         loadJinse();
       }, 60000);
+
+      function normalizeTheme(theme) {
+        return Object.prototype.hasOwnProperty.call(THEMES, theme) ? theme : "deep-coffee-gold";
+      }
+
+      function applyTheme(theme, persist) {
+        const normalizedTheme = normalizeTheme(theme);
+        const themeMeta = THEMES[normalizedTheme];
+        state.theme = normalizedTheme;
+        document.documentElement.dataset.theme = normalizedTheme;
+        els.themeToggle.setAttribute("aria-label", "当前为" + themeMeta.label + "，点击切换主题");
+        els.themeToggle.setAttribute("title", "当前为" + themeMeta.label + "，点击切换主题");
+
+        if (persist) {
+          try {
+            localStorage.setItem(THEME_STORAGE_KEY, normalizedTheme);
+          } catch (error) {}
+        }
+      }
 
       async function loadNews(forceReset) {
         if (state.loading) {
@@ -1640,40 +2383,83 @@
         });
       }
 
-      function toggleBriefSpeech(button) {
-        const text = buildHighlightsText(5);
+      async function toggleBriefSpeech() {
+        if (state.speakingId === BRIEF_SPEECH_ID || state.loadingSpeechId === BRIEF_SPEECH_ID) {
+          stopSpeech();
+          updateSpeechButtons();
+          return;
+        }
+
+        const text = buildHighlightsText(10);
         if (!text) {
           setHeaderStamp("暂无可朗读的简报");
           return;
         }
 
-        if (!("speechSynthesis" in window)) {
-          setHeaderStamp("当前浏览器不支持简报朗读");
-          return;
-        }
-
-        if (window.speechSynthesis.speaking) {
-          window.speechSynthesis.cancel();
-          button.textContent = "朗读简报";
-          setHeaderStamp(state.statusText);
-          return;
-        }
-
         stopSpeech();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = "zh-CN";
-        utterance.rate = 1.08;
-        utterance.onend = function () {
-          button.textContent = "朗读简报";
-          setHeaderStamp(state.statusText);
-        };
-        utterance.onerror = function () {
-          button.textContent = "朗读简报";
-          setHeaderStamp("简报朗读失败");
-        };
-        button.textContent = "停止朗读";
-        setHeaderStamp("正在朗读智能简报");
-        window.speechSynthesis.speak(utterance);
+        const controller = new AbortController();
+        state.loadingSpeechId = BRIEF_SPEECH_ID;
+        state.speechAbortController = controller;
+        els.headerStamp.textContent = "正在生成语音";
+        updateSpeechButtons();
+
+        try {
+          const response = await fetch("/api/tts-speech", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(buildTtsRequestBody(text)),
+            signal: controller.signal
+          });
+
+          if (!response.ok) {
+            throw new Error(await readErrorMessage(response));
+          }
+
+          const audioBlob = await response.blob();
+          if (controller.signal.aborted || state.loadingSpeechId !== BRIEF_SPEECH_ID) {
+            return;
+          }
+
+          releaseSpeechAudio();
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+          state.speechAudio = audio;
+          state.speechObjectUrl = audioUrl;
+          state.speakingId = BRIEF_SPEECH_ID;
+          state.loadingSpeechId = null;
+          els.headerStamp.textContent = "正在朗读";
+          updateSpeechButtons();
+
+          audio.onended = function () {
+            releaseSpeechAudio();
+            state.speakingId = null;
+            els.headerStamp.textContent = state.statusText;
+            updateSpeechButtons();
+          };
+          audio.onerror = function () {
+            releaseSpeechAudio();
+            state.speakingId = null;
+            els.headerStamp.textContent = "朗读失败，请重试";
+            updateSpeechButtons();
+          };
+
+          await audio.play();
+        } catch (error) {
+          if (controller.signal.aborted) {
+            return;
+          }
+          console.error(error);
+          state.speakingId = null;
+          state.loadingSpeechId = null;
+          els.headerStamp.textContent = "语音生成失败，请重试";
+          updateSpeechButtons();
+        } finally {
+          if (state.speechAbortController === controller) {
+            state.speechAbortController = null;
+          }
+        }
       }
 
       function openHighlightsModal() {
@@ -1691,11 +2477,114 @@
         els.highlightsModal.classList.add("is-visible");
         document.body.style.overflow = "hidden";
         els.highlightsCloseBtn.focus();
+        window.requestAnimationFrame(function () {
+          syncSummaryToggles(els.highlightsList);
+        });
       }
 
       function closeHighlightsModal() {
         els.highlightsModal.classList.remove("is-visible");
         els.highlightsModal.hidden = true;
+        document.body.style.overflow = "";
+      }
+
+      function openImageModal(src, title) {
+        if (!src) {
+          return;
+        }
+        els.imageModalImg.src = src;
+        els.imageModalImg.alt = title || "";
+        els.imageModalTitle.textContent = title || "";
+        els.imageModal.hidden = false;
+        els.imageModal.classList.add("is-visible");
+        document.body.style.overflow = "hidden";
+        els.imageModalCloseBtn.focus();
+      }
+
+      function closeImageModal() {
+        els.imageModal.classList.remove("is-visible");
+        els.imageModal.hidden = true;
+        els.imageModalImg.removeAttribute("src");
+        els.imageModalImg.alt = "";
+        els.imageModalTitle.textContent = "";
+        document.body.style.overflow = "";
+      }
+
+      async function openJingjiArticleModal(articleUrl, fallbackTitle) {
+        if (!articleUrl) {
+          return;
+        }
+        if (state.articleAbortController) {
+          state.articleAbortController.abort();
+        }
+
+        const controller = new AbortController();
+        state.articleAbortController = controller;
+        els.jingjiArticleTitle.textContent = fallbackTitle || "21财经文章";
+        els.jingjiArticleBody.innerHTML = '<div class="jingji-article-status">正在加载文章内容...</div>';
+        els.jingjiArticleModal.hidden = false;
+        els.jingjiArticleModal.classList.add("is-visible");
+        document.body.style.overflow = "hidden";
+        els.jingjiArticleCloseBtn.focus();
+
+        try {
+          const response = await fetch(
+            "/api/jingji-article?url=" + encodeURIComponent(articleUrl),
+            { cache: "no-store", signal: controller.signal }
+          );
+          const payload = await response.json();
+          if (!response.ok || !payload || payload.state !== 1) {
+            throw new Error((payload && payload.msg) || "文章内容加载失败");
+          }
+          if (controller.signal.aborted) {
+            return;
+          }
+          renderJingjiArticle(payload, articleUrl);
+        } catch (error) {
+          if (controller.signal.aborted) {
+            return;
+          }
+          els.jingjiArticleBody.innerHTML =
+            '<div class="jingji-article-status">文章内容加载失败，' +
+            '<a class="highlight-link" href="' + escapeAttr(articleUrl) + '" target="_blank" rel="noreferrer">查看原文</a></div>';
+        } finally {
+          if (state.articleAbortController === controller) {
+            state.articleAbortController = null;
+          }
+        }
+      }
+
+      function renderJingjiArticle(payload, fallbackUrl) {
+        const blocks = Array.isArray(payload.blocks) ? payload.blocks : [];
+        const contentMarkup = blocks.map(function (block) {
+          if (block && block.type === "image" && block.url) {
+            return '<img src="' + escapeAttr(block.url) + '" alt="' + escapeAttr(payload.title || "21财经文章配图") + '" loading="lazy" referrerpolicy="no-referrer">';
+          }
+          if (block && block.type === "text" && block.text) {
+            return '<p>' + escapeHtml(block.text) + '</p>';
+          }
+          return '';
+        }).join("");
+
+        els.jingjiArticleTitle.textContent = payload.title || "21财经文章";
+        els.jingjiArticleBody.innerHTML =
+          '<div class="jingji-article-meta">' +
+            '<span>' + escapeHtml(payload.source || "21财经") + '</span>' +
+            (payload.publishedLabel ? '<span>' + escapeHtml(payload.publishedLabel) + '</span>' : '') +
+            '<a href="' + escapeAttr(payload.url || fallbackUrl) + '" target="_blank" rel="noreferrer">查看原文 ↗</a>' +
+          '</div>' +
+          '<div class="jingji-article-content">' + contentMarkup + '</div>';
+      }
+
+      function closeJingjiArticleModal() {
+        if (state.articleAbortController) {
+          state.articleAbortController.abort();
+          state.articleAbortController = null;
+        }
+        els.jingjiArticleModal.classList.remove("is-visible");
+        els.jingjiArticleModal.hidden = true;
+        els.jingjiArticleTitle.textContent = "";
+        els.jingjiArticleBody.innerHTML = "";
         document.body.style.overflow = "";
       }
 
@@ -1705,13 +2594,15 @@
         const todayItems = items.filter(function (item) {
           return getLocalDateKey(getSortTimestamp(item)) === today;
         });
-        return (todayItems.length ? todayItems : items).slice(0, limit);
+        const scopedItems = todayItems.length ? todayItems : items;
+        return Number.isFinite(limit) ? scopedItems.slice(0, limit) : scopedItems;
       }
 
       function createHighlightMarkup(item, index) {
         const ai = item.ai || {};
         const summary = String(item.summary || "该条快讯未提供摘要。").trim();
-        const clippedSummary = summary.length > 110 ? summary.slice(0, 110) + "..." : summary;
+        const summaryId = getHighlightSummaryId(item);
+        const isExpanded = state.expandedIds.has(summaryId);
         return (
           '<article class="highlight-item">' +
             '<span class="highlight-rank">' + escapeHtml(index + 1) + '</span>' +
@@ -1723,10 +2614,15 @@
                 '<span>' + escapeHtml(ai.rankReason || ai.impact || "一般") + '</span>' +
                 '<a class="highlight-link" href="' + escapeAttr(item.url || "#") + '" target="_blank" rel="noreferrer">原文</a>' +
               '</div>' +
-              '<p class="highlight-summary">' + escapeHtml(clippedSummary) + '</p>' +
+              '<p class="highlight-summary ' + (isExpanded ? '' : 'is-collapsed') + '" data-summary-id="' + escapeAttr(summaryId) + '">' + escapeHtml(summary) + '</p>' +
+              '<button class="summary-toggle" type="button" data-summary-toggle-id="' + escapeAttr(summaryId) + '">' + (isExpanded ? '收起' : '展开') + '</button>' +
             '</div>' +
           '</article>'
         );
+      }
+
+      function getHighlightSummaryId(item) {
+        return "highlight:" + getSpeechId(item);
       }
 
       function getLocalDateKey(timestamp) {
@@ -1747,19 +2643,13 @@
           return "";
         }
 
-        const lines = [
-          "人民财讯智能简报",
-          state.statusText,
-          ""
-        ];
-        items.forEach(function (item, index) {
-          const ai = item.ai || {};
-          lines.push(
-            (index + 1) + ". " + (item.title || "未命名快讯") +
-            "（" + (ai.topicLabel || "市场") + "，" + (ai.rankReason || ai.impact || "一般") + "）"
-          );
-        });
-        return lines.join("\n");
+        return items
+          .map(function (item, index) {
+            const title = String(item.title || "未命名快讯").trim();
+            return title ? (index + 1) + "、" + title : "";
+          })
+          .filter(Boolean)
+          .join("\n");
       }
 
       function enrichItems(items, sourceType) {
@@ -2012,8 +2902,18 @@
             counts.set(item.ai.topicId, (counts.get(item.ai.topicId) || 0) + 1);
           }
         });
+        const sourceCounts = new Map();
+        state.items.forEach(function (item) {
+          const source = String(item && item.source || "");
+          if (source) {
+            sourceCounts.set(source, (sourceCounts.get(source) || 0) + 1);
+          }
+        });
 
         const tabs = [{ id: "all", label: "全部", count: items.length }]
+          .concat(SOURCE_FILTERS.map(function (filter) {
+            return { id: filter.id, label: filter.label, count: sourceCounts.get(filter.source) || 0 };
+          }))
           .concat(TOPIC_RULES.filter(function (rule) {
             return counts.has(rule.id);
           }).map(function (rule) {
@@ -2071,7 +2971,7 @@
         const filteredItems = getFilteredJinseItems();
         if (!filteredItems.length) {
           els.jinseList.innerHTML =
-            '<div class="jinse-empty">暂时没有抓到金色财经快讯，请稍后自动刷新。</div>';
+            '<div class="jinse-empty">暂时没有抓到数字资产快讯，请稍后自动刷新。</div>';
           state.renderedJinseCount = 0;
           syncJinseMoreButton();
           return;
@@ -2146,7 +3046,7 @@
         const visibleItems = filteredItems.slice(0, state.visibleCount);
         const nextItems = visibleItems.slice(previousCount);
         if (!nextItems.length) {
-          els.moreBtn.hidden = visibleItems.length >= filteredItems.length;
+          syncMoreButton();
           return;
         }
 
@@ -2162,11 +3062,29 @@
         syncMoreButton();
       }
 
+      function loadMoreNews() {
+        const filteredItems = getFilteredNewsItems();
+        if (filteredItems.length <= state.visibleCount || state.loading) {
+          return;
+        }
+
+        const previousCount = state.visibleCount;
+        state.visibleCount += 12;
+        appendMoreItems(previousCount);
+      }
+
+      function isNearPageBottom() {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+        const pageHeight = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+        return scrollTop + viewportHeight >= pageHeight - 420;
+      }
+
       function createJinseCardMarkup(item) {
         return (
           '<article class="jinse-card">' +
             '<div class="jinse-meta">' +
-              '<span class="jinse-source">金色财经</span>' +
+              '<span class="jinse-source">' + escapeHtml(item.source || "金色财经") + '</span>' +
               '<span>' + escapeHtml(item.timeLabel || "") + '</span>' +
             '</div>' +
             '<h3>' + escapeHtml(item.title) + '</h3>' +
@@ -2188,10 +3106,9 @@
         return (
           '<article class="jinse-card">' +
             '<div class="jinse-meta">' +
-              '<span class="jinse-source">金色财经</span>' +
+              '<span class="jinse-source">' + escapeHtml(item.source || "金色财经") + '</span>' +
               '<span>' + escapeHtml(item.timeLabel || "") + '</span>' +
             '</div>' +
-            '<p class="smart-line">' + escapeHtml(ai.reason || "数字资产 · 实时") + '</p>' +
             '<h3>' + escapeHtml(item.title) + '</h3>' +
             '<p class="jinse-summary ' + (shouldCollapse && !isExpanded ? 'is-collapsed' : '') + '" data-summary-id="' + escapeAttr(item.id) + '">' + escapeHtml(item.summary || "暂无摘要") + '</p>' +
             '<div class="jinse-actions">' +
@@ -2217,12 +3134,29 @@
       }
 
       function createNewsCardMarkup(item, index) {
-        const shouldCollapse = shouldCollapseSummary(item.summary);
+        const imageUrl = String(item.imageUrl || "").trim();
+        const hasSummary = Boolean(String(item.summary || "").trim());
+        const shouldCollapse = hasSummary && shouldCollapseSummary(item.summary);
         const isExpanded = state.expandedIds.has(item.id);
         const ai = item.ai || {};
         const speechId = getSpeechId(item);
+        const cardClass = "news-card" + (item.isRed ? " is-red" : "");
+        const titleMarkup = item.source === "21财经"
+          ? '<h3 class="news-title"><button class="news-title-button" type="button" data-jingji-article-url="' + escapeAttr(item.url || "") + '" data-jingji-article-title="' + escapeAttr(item.title || "") + '">' + escapeHtml(item.title) + '</button></h3>'
+          : '<h3 class="news-title">' + escapeHtml(item.title) + '</h3>';
+        const imageMarkup = imageUrl
+          ? '<button class="news-image-link" type="button" data-image-preview="' + escapeAttr(imageUrl) + '" data-image-title="' + escapeAttr(item.imageAlt || item.title || "") + '">' +
+              '<img class="news-image" src="' + escapeAttr(imageUrl) + '" alt="' + escapeAttr(item.imageAlt || item.title || "") + '" loading="lazy" referrerpolicy="no-referrer">' +
+            '</button>'
+          : '';
+        const summaryMarkup = hasSummary
+          ? '<p class="news-summary ' + (shouldCollapse && !isExpanded ? 'is-collapsed' : '') + '" data-summary-id="' + escapeAttr(item.id) + '">' + escapeHtml(item.summary) + '</p>'
+          : (imageUrl ? '' : '<p class="news-summary" data-summary-id="' + escapeAttr(item.id) + '">' + escapeHtml("该条快讯未提供摘要。") + '</p>');
+        if (imageUrl && !hasSummary) {
+          item.summary = " ";
+        }
         return (
-          '<article class="news-card" style="animation-delay:' + Math.min(index * 35, 350) + 'ms">' +
+          '<article class="' + cardClass + '" style="animation-delay:' + Math.min(index * 35, 350) + 'ms">' +
             '<div class="card-head">' +
               '<span class="source">' + escapeHtml(item.source) + '</span>' +
               '<span class="card-tags">' +
@@ -2232,8 +3166,8 @@
                 (ai.tone === "利好" ? '<span class="badge good">利好</span>' : '') +
               '</span>' +
             '</div>' +
-            '<h3 class="news-title">' + escapeHtml(item.title) + '</h3>' +
-            '<p class="smart-line">' + escapeHtml(ai.reason || "市场 · 实时") + '</p>' +
+            titleMarkup +
+            imageMarkup +
             '<p class="news-summary ' + (shouldCollapse && !isExpanded ? 'is-collapsed' : '') + '" data-summary-id="' + escapeAttr(item.id) + '">' + escapeHtml(item.summary || "该条快讯未提供摘要。") + '</p>' +
             (shouldCollapse
               ? '<button class="summary-toggle" type="button" data-summary-toggle-id="' + escapeAttr(item.id) + '">' + (isExpanded ? '收起' : '展开') + '</button>'
@@ -2408,6 +3342,12 @@
         if (state.activeTopic === "all") {
           return true;
         }
+        const sourceFilter = SOURCE_FILTERS.find(function (filter) {
+          return filter.id === state.activeTopic;
+        });
+        if (sourceFilter) {
+          return String(item && item.source || "") === sourceFilter.source;
+        }
         return item && item.ai && item.ai.topicId === state.activeTopic;
       }
 
@@ -2428,9 +3368,9 @@
       }
 
       function getFilteredJinseItems() {
-        return sortItems(state.jinseItems.filter(function (item) {
-          return matchesSearch(item) && matchesTopic(item) && matchesQuickFilter(item);
-        }));
+        return state.jinseItems.filter(function (item) {
+          return matchesSearch(item) && matchesQuickFilter(item);
+        }).slice().sort(compareLatestItems);
       }
 
       function sortItems(items) {
@@ -2495,6 +3435,17 @@
         return diffDays + " 天前";
       }
 
+      function buildTtsRequestBody(input) {
+        return {
+          input: input,
+          voice: "zh-CN-XiaoxiaoNeural",
+          speed: "1.25",
+          pitch: "0",
+          volume: "0",
+          style: "newscast"
+        };
+      }
+
       async function toggleSpeech(id) {
         if (state.speakingId === id || state.loadingSpeechId === id) {
           stopSpeech();
@@ -2523,14 +3474,7 @@
             headers: {
               "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-              input: buildSpeechText(item),
-              voice: "zh-CN-XiaoxiaoNeural",
-              speed: "1.25",
-              pitch: "0",
-              volume: "0",
-              style: "newscast"
-            }),
+            body: JSON.stringify(buildTtsRequestBody(buildSpeechText(item))),
             signal: controller.signal
           });
 
@@ -2586,7 +3530,7 @@
       function stopSpeech() {
         if ("speechSynthesis" in window && window.speechSynthesis.speaking) {
           window.speechSynthesis.cancel();
-          const briefButton = els.intelActions.querySelector('[data-intel-command="read-brief"]');
+          const briefButton = document.querySelector('[data-intel-command="read-brief"]');
           if (briefButton) {
             briefButton.textContent = "朗读简报";
           }
@@ -2662,12 +3606,28 @@
         return state.speakingId === id ? "停止" : "朗读";
       }
 
+      function updateBriefSpeechButton() {
+        if (!els.highlightsBriefBtn) {
+          return;
+        }
+        const isBriefLoading = state.loadingSpeechId === BRIEF_SPEECH_ID;
+        const isBriefSpeaking = state.speakingId === BRIEF_SPEECH_ID;
+        els.highlightsBriefBtn.classList.toggle("is-active", isBriefLoading || isBriefSpeaking);
+        els.highlightsBriefBtn.classList.toggle("is-loading", isBriefLoading);
+        if (isBriefLoading) {
+          els.highlightsBriefBtn.textContent = "生成中";
+          return;
+        }
+        els.highlightsBriefBtn.textContent = isBriefSpeaking ? "停止朗读" : "朗读简报";
+      }
+
       function updateSpeechButtons() {
         document.querySelectorAll("[data-read-id]").forEach(function (button) {
           const id = button.getAttribute("data-read-id");
           button.className = "read-btn " + getReadButtonClass(id);
           button.lastChild.textContent = getReadButtonLabel(id);
         });
+        updateBriefSpeechButton();
       }
 
       function syncSummaryToggles(container) {
@@ -2707,21 +3667,27 @@
 
       function syncMoreButton() {
         const hasMoreNews = getFilteredNewsItems().length > state.visibleCount;
-        const hasMoreJinse = getFilteredJinseItems().length > state.visibleJinseCount;
-        els.moreBtn.hidden = !hasMoreNews && !hasMoreJinse;
+        if (hasMoreNews && isNearPageBottom()) {
+          window.requestAnimationFrame(loadMoreNews);
+        }
       }
 
       function syncJinseMoreButton() {
         els.jinseMoreBtn.hidden = getFilteredJinseItems().length <= state.visibleJinseCount;
       }
 
-      function toggleSummary(id) {
+      function toggleSummary(target) {
+        const isToggleButton = target && typeof target.getAttribute === "function";
+        const id = isToggleButton ? target.getAttribute("data-summary-toggle-id") : target;
         if (!id) {
           return;
         }
 
-        const summary = document.querySelector('[data-summary-id="' + cssEscape(id) + '"]');
-        const toggle = document.querySelector('[data-summary-toggle-id="' + cssEscape(id) + '"]');
+        const card = isToggleButton ? target.closest(".news-card, .jinse-card, .highlight-item") : null;
+        const summarySelector = '[data-summary-id="' + cssEscape(id) + '"]';
+        const toggleSelector = '[data-summary-toggle-id="' + cssEscape(id) + '"]';
+        const summary = card ? card.querySelector(summarySelector) : document.querySelector(summarySelector);
+        const toggle = isToggleButton ? target : document.querySelector(toggleSelector);
         if (!summary || !toggle) {
           return;
         }
