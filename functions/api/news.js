@@ -4,6 +4,13 @@ const REFERER_URL = `${BASE_URL}/article/list/kx.html`;
 const JIEMIAN_MOBILE_URL = "https://m.jiemian.com/lists/4.html";
 const JIEMIAN_DESKTOP_URL = "https://www.jiemian.com/lists/4.html";
 const JIEMIAN_AJAX_URL = "https://a.jiemian.com/mobile/index.php?m=lists&a=ajaxNews&cid=4";
+const KEJI_FEED_URL = "https://kejikuaixun.blogspot.com/feeds/posts/default?alt=json&max-results=30";
+const KEJI_SITE_URL = "https://kejikuaixun.blogspot.com/";
+const STAR_MARKET_TELEGRAPH_URL = "https://www.chinastarmarket.cn/telegraph";
+const STAR_MARKET_CACHE_URL = "https://www.chinastarmarket.cn/api/cache";
+const JINGJI_GLOBAL_URL = "https://www.21jingji.com/channel/global/";
+const JINGJI_GLOBAL_API_URL = "https://m.21jingji.com/channel/global";
+const JINGJI_AUTH_URL = "https://m.21jingji.com/reader/cbhChannelAuth?";
 const SHANGHAI_TZ = "Asia/Shanghai";
 
 function absoluteUrl(url) {
@@ -14,6 +21,46 @@ function absoluteUrl(url) {
     return url;
   }
   return `${BASE_URL}${url}`;
+}
+
+function normalizeImageUrl(url) {
+  let imageUrl = decodeHtml(String(url || "").trim());
+  if (!imageUrl || imageUrl.startsWith("data:")) {
+    return "";
+  }
+  if (imageUrl.startsWith("//")) {
+    imageUrl = `https:${imageUrl}`;
+  }
+  if (imageUrl.startsWith("/")) {
+    imageUrl = absoluteUrl(imageUrl);
+  }
+  if (!/^https?:\/\//.test(imageUrl)) {
+    return "";
+  }
+  const ignoredParts = ["default_img", "logo", "favicon", "loader.gif", "avatar"];
+  if (ignoredParts.some((part) => imageUrl.toLowerCase().includes(part))) {
+    return "";
+  }
+  return imageUrl;
+}
+
+function extractFirstImage(value) {
+  const text = String(value || "");
+  const patterns = [
+    /<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["']([^"']+)/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/gi,
+    /<img[^>]+(?:data-original|data-src|src)=["']([^"']+)["']/gi,
+  ];
+  for (const pattern of patterns) {
+    let match = null;
+    while ((match = pattern.exec(text)) !== null) {
+      const imageUrl = normalizeImageUrl(match[1]);
+      if (imageUrl) {
+        return imageUrl;
+      }
+    }
+  }
+  return "";
 }
 
 function getDateParts(timestamp) {
@@ -57,6 +104,9 @@ function flattenStcnTags(rawTags) {
 function normalizeStcnItem(raw) {
   const timestamp = Number(raw.time);
   const parts = getDateParts(timestamp);
+  const imageUrl = normalizeImageUrl(
+    raw.image || raw.cover || raw.thumb || raw.pic || raw.share?.image,
+  );
   const tags = flattenStcnTags(raw.tags).map((tag) => ({
         name: (tag?.name || "").trim(),
         code: (tag?.code || "").trim(),
@@ -70,6 +120,8 @@ function normalizeStcnItem(raw) {
     summary: (raw.content || "").trim(),
     source: (raw.source || "人民财讯").trim(),
     url: absoluteUrl(raw.web_url || raw.url),
+    imageUrl,
+    imageAlt: (raw.title || "").trim(),
     timestamp,
     publishedAt: new Date(timestamp).toISOString(),
     publishedDate: `${parts.year}-${parts.month}-${parts.day}`,
@@ -111,12 +163,15 @@ function normalizeJiemianItem(articleId, title, summary, dateText, timeText, raw
     return null;
   }
   const parts = getDateParts(timestamp);
+  const url = normalizeJiemianUrl(rawUrl);
   return {
     id: `jiemian-${articleId}`,
     title,
     summary,
     source: "界面新闻",
-    url: normalizeJiemianUrl(rawUrl),
+    url,
+    imageUrl: "",
+    imageAlt: title,
     timestamp,
     publishedAt: new Date(timestamp).toISOString(),
     publishedDate: `${parts.year}-${parts.month}-${parts.day}`,
@@ -126,6 +181,47 @@ function normalizeJiemianItem(articleId, title, summary, dateText, timeText, raw
     isTop: false,
     tags: [],
   };
+}
+
+function isJiemianContentImage(url) {
+  const lower = String(url || "").toLowerCase();
+  const ignoredParts = ["jiemian_logo", "loader.gif", "avatar", "logo.svg", "/static/"];
+  return Boolean(lower) && !ignoredParts.some((part) => lower.includes(part));
+}
+
+function normalizeJiemianImageUrl(url) {
+  let imageUrl = decodeHtml(String(url || "").trim());
+  if (!imageUrl || imageUrl.startsWith("data:")) {
+    return "";
+  }
+  if (imageUrl.startsWith("//")) {
+    imageUrl = `https:${imageUrl}`;
+  }
+  if (imageUrl.startsWith("/")) {
+    imageUrl = `https://www.jiemian.com${imageUrl}`;
+  }
+  if (!/^https?:\/\//.test(imageUrl) || !isJiemianContentImage(imageUrl)) {
+    return "";
+  }
+  return imageUrl;
+}
+
+function extractJiemianArticleImage(html) {
+  const patterns = [
+    /<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]+content=["']([^"']+)/gi,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image)["']/gi,
+    /<img[^>]+(?:data-original|data-src|src)=["']([^"']+)["']/gi,
+  ];
+  for (const pattern of patterns) {
+    let match = null;
+    while ((match = pattern.exec(html)) !== null) {
+      const imageUrl = normalizeJiemianImageUrl(match[1]);
+      if (imageUrl) {
+        return imageUrl;
+      }
+    }
+  }
+  return "";
 }
 
 async function fetchJsonWithRetry(url, options, retries = 2) {
@@ -319,6 +415,40 @@ function parseJiemianChunk(rawHtml, currentDate) {
   return { items, currentDate: workingDate };
 }
 
+async function enrichJiemianImages(items, limit = 18) {
+  let enriched = 0;
+  for (const item of items) {
+    if (enriched >= limit) {
+      break;
+    }
+    if (item.imageUrl) {
+      continue;
+    }
+    try {
+      const articleHtml = await fetchTextWithRetry(
+        item.url,
+        {
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+            Referer: JIEMIAN_DESKTOP_URL,
+            "Cache-Control": "no-cache, no-store",
+            Pragma: "no-cache",
+          },
+        },
+        1,
+      );
+      const imageUrl = extractJiemianArticleImage(articleHtml);
+      if (!imageUrl) {
+        continue;
+      }
+      item.imageUrl = imageUrl;
+      item.imageAlt = item.title || "";
+      enriched += 1;
+    } catch (error) {}
+  }
+}
+
 async function fetchJiemianItems(maxPages = 3) {
   const desktopUrl = new URL(JIEMIAN_DESKTOP_URL);
   desktopUrl.searchParams.set("_", String(Date.now()));
@@ -397,7 +527,286 @@ async function fetchJiemianItems(maxPages = 3) {
   }
 
   combinedItems.sort((a, b) => b.timestamp - a.timestamp);
+  await enrichJiemianImages(combinedItems);
   return combinedItems;
+}
+
+function getBloggerText(value) {
+  if (value && typeof value === "object") {
+    return String(value.$t || "");
+  }
+  return String(value || "");
+}
+
+function findBloggerAlternateUrl(entry) {
+  const links = Array.isArray(entry?.link) ? entry.link : [];
+  const alternate = links.find((link) => link?.rel === "alternate" && link?.href);
+  return alternate?.href || KEJI_SITE_URL;
+}
+
+function stripLeadingTitle(summary, title) {
+  if (title && summary.startsWith(title)) {
+    return summary.slice(title.length).replace(/^[\s：:，,。\-—]+/, "");
+  }
+  return summary;
+}
+
+function normalizeKejiItem(entry) {
+  const title = getBloggerText(entry?.title).trim();
+  const publishedText = getBloggerText(entry?.published || entry?.updated);
+  const timestamp = Date.parse(publishedText);
+  if (!title || !Number.isFinite(timestamp)) {
+    return null;
+  }
+
+  const content = getBloggerText(entry?.content || entry?.summary);
+  const imageUrl = extractFirstImage(content);
+  let summary = stripLeadingTitle(cleanHtmlText(content), title);
+
+  const rawId = getBloggerText(entry?.id) || findBloggerAlternateUrl(entry);
+  const postIdMatch = rawId.match(/\.post-(\d+)$/);
+  const postId = postIdMatch ? postIdMatch[1] : rawId;
+  const parts = getDateParts(timestamp);
+
+  return {
+    id: `keji-${postId}`,
+    title,
+    summary,
+    source: "风向旗参考快讯",
+    url: findBloggerAlternateUrl(entry),
+    imageUrl,
+    imageAlt: title,
+    timestamp,
+    publishedAt: new Date(timestamp).toISOString(),
+    publishedDate: `${parts.year}-${parts.month}-${parts.day}`,
+    publishedTime: `${parts.hour}:${parts.minute}`,
+    publishedLabel: `${parts.year}年${parts.month}月${parts.day}日 ${parts.hour}:${parts.minute}`,
+    isRed: false,
+    isTop: false,
+    tags: (Array.isArray(entry?.category) ? entry.category : [])
+      .map((category) => ({
+        name: String(category?.term || "").trim(),
+        code: "",
+        stockCode: "",
+        url: "",
+      }))
+      .filter((tag) => tag.name),
+  };
+}
+
+async function fetchKejiItems(limit = 30) {
+  const payload = await fetchJsonWithRetry(
+    KEJI_FEED_URL,
+    {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+        Accept: "application/json,text/plain,*/*",
+      },
+    },
+    2,
+  );
+  const entries = Array.isArray(payload?.feed?.entry) ? payload.feed.entry : [];
+  const seenIds = new Set();
+  const items = [];
+  for (const entry of entries) {
+    const item = normalizeKejiItem(entry);
+    if (!item || seenIds.has(item.id)) {
+      continue;
+    }
+    seenIds.add(item.id);
+    items.push(item);
+    if (items.length >= limit) {
+      break;
+    }
+  }
+  return items.sort((a, b) => b.timestamp - a.timestamp);
+}
+
+function normalizeStarMarketContent(content, title) {
+  let text = String(content || "").replace(/\s+/g, " ").trim();
+  if (title && text.startsWith(`【${title}】`)) {
+    text = text.slice(title.length + 2).trim();
+  }
+  return stripLeadingTitle(text, title);
+}
+
+function normalizeStarMarketItem(raw) {
+  const title = String(raw?.title || "").trim();
+  const timestamp = Number(raw?.ctime) * 1000;
+  if (!title || !Number.isFinite(timestamp) || timestamp <= 0) {
+    return null;
+  }
+
+  const parts = getDateParts(timestamp);
+  const rawImages = Array.isArray(raw?.images) ? raw.images : [];
+  const imageUrl = normalizeImageUrl(rawImages[0] || "");
+  const itemId = String(raw?.id || `${timestamp}-${title}`);
+  const level = String(raw?.level || "").toUpperCase();
+  const subjects = Array.isArray(raw?.subjects) ? raw.subjects : [];
+
+  return {
+    id: `starmarket-${itemId}`,
+    title,
+    summary: normalizeStarMarketContent(raw?.content || title, title),
+    source: "科创板日报",
+    url: `https://www.chinastarmarket.cn/detail/${encodeURIComponent(itemId)}`,
+    imageUrl,
+    imageAlt: title,
+    timestamp,
+    publishedAt: new Date(timestamp).toISOString(),
+    publishedDate: `${parts.year}-${parts.month}-${parts.day}`,
+    publishedTime: `${parts.hour}:${parts.minute}`,
+    publishedLabel: `${parts.year}年${parts.month}月${parts.day}日 ${parts.hour}:${parts.minute}`,
+    isRed: level === "A" || level === "B",
+    isTop: false,
+    tags: subjects
+      .map((subject) => ({
+        name: String(subject?.subject_name || subject?.name || "").trim(),
+        code: "",
+        stockCode: "",
+        url: "",
+      }))
+      .filter((tag) => tag.name),
+  };
+}
+
+async function fetchStarMarketItems(limit = 30) {
+  const url = new URL(STAR_MARKET_CACHE_URL);
+  url.searchParams.set("rn", String(limit));
+  url.searchParams.set("lastTime", String(Math.floor(Date.now() / 1000)));
+  url.searchParams.set("app", "stib");
+  url.searchParams.set("channel", "100");
+  url.searchParams.set("name", "telegraph");
+
+  const payload = await fetchJsonWithRetry(
+    url.toString(),
+    {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+        Accept: "application/json,text/plain,*/*",
+        Referer: STAR_MARKET_TELEGRAPH_URL,
+      },
+    },
+    2,
+  );
+
+  const rawItems = Array.isArray(payload?.data?.roll_data) ? payload.data.roll_data : [];
+  const seenIds = new Set();
+  const items = [];
+  for (const raw of rawItems) {
+    const item = normalizeStarMarketItem(raw);
+    if (!item || seenIds.has(item.id)) {
+      continue;
+    }
+    seenIds.add(item.id);
+    items.push(item);
+    if (items.length >= limit) {
+      break;
+    }
+  }
+  return items.sort((a, b) => b.timestamp - a.timestamp);
+}
+
+function normalizeJingjiGlobalItem(raw) {
+  const title = cleanHtmlText(raw?.title || "");
+  let timestamp = Number(raw?.updatetime);
+  if (timestamp < 100000000000) {
+    timestamp *= 1000;
+  }
+  if (!title || !Number.isFinite(timestamp) || timestamp <= 0) {
+    return null;
+  }
+
+  const parts = getDateParts(timestamp);
+  const itemId = String(raw?.id || raw?.api || `${timestamp}-${title}`).trim();
+  let articleUrl = String(raw?.url || JINGJI_GLOBAL_URL).trim();
+  if (articleUrl.startsWith("//")) {
+    articleUrl = `https:${articleUrl}`;
+  } else if (articleUrl.startsWith("/")) {
+    articleUrl = `https://m.21jingji.com${articleUrl}`;
+  }
+
+  const tags = String(raw?.keywords || "")
+    .split(/[,，;；]/)
+    .map((keyword) => ({
+      name: keyword.trim(),
+      code: "",
+      stockCode: "",
+      url: "",
+    }))
+    .filter((tag) => tag.name);
+
+  return {
+    id: `jingji-global-${itemId}`,
+    title,
+    summary: cleanHtmlText(raw?.description || ""),
+    source: "21财经",
+    url: articleUrl,
+    imageUrl: normalizeImageUrl(raw?.listthumb || raw?.image || raw?.thumb || ""),
+    imageAlt: title,
+    timestamp,
+    publishedAt: new Date(timestamp).toISOString(),
+    publishedDate: `${parts.year}-${parts.month}-${parts.day}`,
+    publishedTime: `${parts.hour}:${parts.minute}`,
+    publishedLabel: `${parts.year}年${parts.month}月${parts.day}日 ${parts.hour}:${parts.minute}`,
+    isRed: false,
+    isTop: false,
+    tags,
+  };
+}
+
+async function fetchJingjiGlobalItems(limit = 30) {
+  const commonHeaders = {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+    Accept: "application/json,text/plain,*/*",
+    Origin: "https://www.21jingji.com",
+    Referer: JINGJI_GLOBAL_URL,
+  };
+  const authPayload = await fetchJsonWithRetry(
+    JINGJI_AUTH_URL,
+    { method: "POST", headers: commonHeaders },
+    2,
+  );
+  const token = String(authPayload?.token || "").trim();
+  if (!token) {
+    throw new Error("21财经接口未返回授权令牌");
+  }
+
+  const pageCount = Math.min(4, Math.max(1, Math.ceil(limit / 20)));
+  const pages = await Promise.all(
+    Array.from({ length: pageCount }, (_, index) => {
+      const url = new URL(JINGJI_GLOBAL_API_URL);
+      url.searchParams.set("page", String(index + 1));
+      url.searchParams.set("type", "json");
+      return fetchJsonWithRetry(
+        url.toString(),
+        {
+          method: "POST",
+          headers: {
+            ...commonHeaders,
+            Authorization: token,
+            "Content-Type": "application/json",
+          },
+        },
+        2,
+      );
+    }),
+  );
+
+  const seenIds = new Set();
+  const items = [];
+  for (const raw of pages.flat()) {
+    const item = normalizeJingjiGlobalItem(raw);
+    if (!item || seenIds.has(item.id)) {
+      continue;
+    }
+    seenIds.add(item.id);
+    items.push(item);
+  }
+  return items.sort((a, b) => b.timestamp - a.timestamp).slice(0, limit);
 }
 
 function buildPayload(items, pagesFetched) {
@@ -416,7 +825,7 @@ function buildPayload(items, pagesFetched) {
 
   return {
     siteTitle: "人民财讯快线",
-    sourceName: "证券时报网 / 界面新闻",
+    sourceName: "证券时报网 / 界面新闻 / 风向旗参考快讯 / 科创板日报 / 21财经",
     sourceUrl: REFERER_URL,
     generatedAt: new Date(generatedAt).toISOString(),
     generatedAtLabel: `${generatedParts.year}-${generatedParts.month}-${generatedParts.day} ${generatedParts.hour}:${generatedParts.minute}:00`,
@@ -450,15 +859,23 @@ export async function onRequestGet(context) {
   );
 
   try {
-    const [{ items: stcnItems, pagesFetched }, jiemianItems] = await Promise.all([
+    const [{ items: stcnItems, pagesFetched }, jiemianItems, kejiItems, starMarketItems, jingjiGlobalItems] = await Promise.all([
       fetchStcnItems(pages),
       fetchJiemianItems(3).catch(() => []),
+      fetchKejiItems(30).catch(() => []),
+      fetchStarMarketItems(30).catch(() => []),
+      fetchJingjiGlobalItems(30).catch(() => []),
     ]);
-    const items = [...stcnItems, ...jiemianItems].sort((a, b) => b.timestamp - a.timestamp);
+    const items = [...stcnItems, ...jiemianItems, ...kejiItems, ...starMarketItems, ...jingjiGlobalItems].sort(
+      (a, b) => b.timestamp - a.timestamp,
+    );
     const payload = buildPayload(items, pagesFetched);
     payload.isLive = true;
     payload.isFallback = false;
     payload.jiemianArticleCount = jiemianItems.length;
+    payload.kejiArticleCount = kejiItems.length;
+    payload.starMarketArticleCount = starMarketItems.length;
+    payload.jingjiGlobalArticleCount = jingjiGlobalItems.length;
     return jsonResponse(payload, 200);
   } catch (error) {
     return jsonResponse(
