@@ -601,6 +601,11 @@
       color: var(--brief-action-active-text);
     }
 
+    .mobile-crypto-btn,
+    .mobile-crypto-sort {
+      display: none;
+    }
+
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -1723,27 +1728,18 @@
 
       .intelligence-panel > div:first-child {
         min-height: 0;
+        flex-direction: column;
+        gap: 8px;
         background: transparent;
       }
 
       .intel-metrics {
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-      }
-
-      .intel-metric {
-        min-height: 66px;
-        padding: 10px 12px;
-      }
-
-      .intel-metric strong {
-        margin-top: 6px;
-        font-size: 17px;
+        display: none;
       }
 
       .intel-actions {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         width: 100%;
         gap: 6px;
       }
@@ -1751,8 +1747,31 @@
       .intel-action-btn {
         min-height: 36px;
         min-width: 0;
-        padding: 0 6px;
+        padding: 0 4px;
+        font-size: 11px;
         white-space: nowrap;
+      }
+
+      .mobile-crypto-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .mobile-crypto-sort {
+        display: flex;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--brief-panel-border);
+      }
+
+      .mobile-crypto-sort .sort-btn {
+        min-height: 38px;
+        padding: 0 18px;
+        font-size: 12px;
       }
 
       .modal-backdrop {
@@ -1908,8 +1927,22 @@
       }
 
       .side-panel {
+        display: none;
         min-width: 0;
         margin-top: 8px;
+      }
+
+      .mobile-crypto-mode .primary-news-panel {
+        display: none;
+      }
+
+      .mobile-crypto-mode .side-panel {
+        display: grid;
+        margin-top: 0;
+      }
+
+      .mobile-crypto-mode .side-heading .sort-switch {
+        display: none;
       }
     }
 
@@ -1995,6 +2028,11 @@
             <button class="intel-action-btn" type="button" data-quick-filter="high">只看高影响</button>
             <button class="intel-action-btn" type="button" data-quick-filter="risk">只看风险</button>
             <button class="intel-action-btn" type="button" data-intel-command="show-highlights">今日重点</button>
+            <button class="intel-action-btn mobile-crypto-btn" id="mobileCryptoBtn" type="button" data-intel-command="toggle-mobile-crypto" aria-pressed="false">数字资产</button>
+          </div>
+          <div class="mobile-crypto-sort" aria-label="数字资产排序方式">
+            <button class="sort-btn is-active" type="button" data-sort-mode="smart">智能排序</button>
+            <button class="sort-btn" type="button" data-sort-mode="latest">最新优先</button>
           </div>
         </div>
         <div class="intel-metrics" aria-label="智能指标">
@@ -2018,7 +2056,7 @@
       </section>
 
       <div class="content-layout">
-        <section>
+        <section class="primary-news-panel">
           <div class="control-row">
             <div class="topic-tabs" id="topicTabs" aria-label="主题筛选"></div>
           </div>
@@ -2135,6 +2173,7 @@
         jinseList: document.getElementById("jinseList"),
         topicTabs: document.getElementById("topicTabs"),
         intelActions: document.getElementById("intelActions"),
+        mobileCryptoBtn: document.getElementById("mobileCryptoBtn"),
         intelHeadline: document.getElementById("intelHeadline"),
         intelSummary: document.getElementById("intelSummary"),
         intelHighImpact: document.getElementById("intelHighImpact"),
@@ -2198,6 +2237,7 @@
       els.intelActions.addEventListener("click", function (event) {
         const quickButton = event.target.closest("[data-quick-filter]");
         if (quickButton) {
+          setMobileCryptoMode(false);
           const nextFilter = quickButton.getAttribute("data-quick-filter") || "all";
           state.quickFilter = state.quickFilter === nextFilter ? "all" : nextFilter;
           syncIntelActionButtons();
@@ -2215,6 +2255,8 @@
           toggleBriefSpeech();
         } else if (command === "show-highlights") {
           openHighlightsModal();
+        } else if (command === "toggle-mobile-crypto") {
+          setMobileCryptoMode(!document.body.classList.contains("mobile-crypto-mode"));
         }
       });
 
@@ -2280,7 +2322,10 @@
         button.addEventListener("click", function () {
           state.sortMode = button.getAttribute("data-sort-mode") || "smart";
           document.querySelectorAll("[data-sort-mode]").forEach(function (entry) {
-            entry.classList.toggle("is-active", entry === button);
+            entry.classList.toggle(
+              "is-active",
+              entry.getAttribute("data-sort-mode") === state.sortMode
+            );
           });
           refreshFilteredViews();
         });
@@ -2579,6 +2624,14 @@
         window.requestAnimationFrame(function () {
           syncSummaryToggles(els.highlightsList);
         });
+      }
+
+      function setMobileCryptoMode(enabled) {
+        const isActive = Boolean(enabled);
+        document.body.classList.toggle("mobile-crypto-mode", isActive);
+        els.mobileCryptoBtn.classList.toggle("is-active", isActive);
+        els.mobileCryptoBtn.setAttribute("aria-pressed", String(isActive));
+        els.mobileCryptoBtn.textContent = isActive ? "返回主新闻" : "数字资产";
       }
 
       function closeHighlightsModal() {
