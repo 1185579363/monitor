@@ -1,5 +1,9 @@
 const BASE_URL = "https://www.jinse.com.cn";
 const LIVES_URL = `${BASE_URL}/lives`;
+const FORESIGHT_BASE_URL = "https://foresightnews.pro";
+const FORESIGHT_NEWS_URL = `${FORESIGHT_BASE_URL}/news`;
+const ODAILY_NEWSFLASH_URL = "https://www.odaily.news/zh-CN/newsflash";
+const ODAILY_API_URL = "https://web-api.odaily.news/newsflash/page";
 const SHANGHAI_TZ = "Asia/Shanghai";
 
 function absoluteUrl(url) {
@@ -10,6 +14,24 @@ function absoluteUrl(url) {
     return url.replace(".cn.cn/", ".cn/");
   }
   return `${BASE_URL}${url}`.replace(".cn.cn/", ".cn/");
+}
+
+function absoluteForesightUrl(url) {
+  if (!url) {
+    return FORESIGHT_NEWS_URL;
+  }
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  return `${FORESIGHT_BASE_URL}${url}`;
+}
+
+function absoluteOdailyUrl(id) {
+  const itemId = String(id || "").trim();
+  if (!itemId) {
+    return ODAILY_NEWSFLASH_URL;
+  }
+  return `${ODAILY_NEWSFLASH_URL}/${encodeURIComponent(itemId)}`;
 }
 
 function decodeHtml(value) {
@@ -45,6 +67,25 @@ function getDateParts(timestamp) {
     }
   }
   return map;
+}
+
+function parseTimeLabelToday(value) {
+  const match = String(value || "").trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) {
+    return 0;
+  }
+  const now = new Date();
+  const date = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    Number(match[1]),
+    Number(match[2]),
+  );
+  if (date.getTime() - now.getTime() > 30 * 60000) {
+    date.setDate(date.getDate() - 1);
+  }
+  return date.getTime();
 }
 
 function splitTopLevel(input) {
@@ -352,7 +393,7 @@ function extractVisibleItems(html) {
     const summary = stripTags(summaryMatch[2]);
     const timeLabel = timeMatch ? timeMatch[1] : "";
     const idMatch = href.match(/(\d+)\.html/);
-    const timestamp = timeLabel ? Date.now() : 0;
+    const timestamp = parseTimeLabelToday(timeLabel);
 
     items.push({
       id: idMatch ? idMatch[1] : href,
@@ -368,6 +409,76 @@ function extractVisibleItems(html) {
   return items;
 }
 
+function extractForesightItems(html, limit) {
+  const pattern =
+    /<div class="timeline-time"[^>]*>\s*([^<]+)\s*<\/div>[\s\S]*?<a href="([^"]+)"[^>]*class="news-card"[\s\S]*?<h3[^>]*>([\s\S]*?)<\/h3>\s*<div class="news-content"[^>]*>([\s\S]*?)<\/div>/gi;
+  const items = [];
+  const seenUrls = new Set();
+  let match = null;
+
+  while ((match = pattern.exec(html)) !== null) {
+    const timeLabel = stripTags(match[1]);
+    const href = match[2];
+    const title = stripTags(match[3]);
+    const summary = stripTags(match[4]);
+    const url = absoluteForesightUrl(href);
+    if (!title || !summary || seenUrls.has(url)) {
+      continue;
+    }
+    seenUrls.add(url);
+    const idMatch = href.match(/\/news\/detail\/(\d+)/);
+    items.push({
+      id: `foresight-${idMatch ? idMatch[1] : url}`,
+      title,
+      summary,
+      timeLabel,
+      source: "Foresight News",
+      url,
+      timestamp: parseTimeLabelToday(timeLabel),
+    });
+    if (items.length >= limit) {
+      break;
+    }
+  }
+
+  return items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+}
+
+function extractOdailyItems(payload, limit) {
+  const list = payload && payload.data && Array.isArray(payload.data.list) ? payload.data.list : [];
+  const items = [];
+  const seenUrls = new Set();
+
+  for (const raw of list) {
+    if (!raw || typeof raw !== "object") {
+      continue;
+    }
+    const title = stripTags(raw.title || "");
+    const summary = stripTags(raw.description || "");
+    const timestamp = Number(raw.publishTimestamp || 0);
+    const url = absoluteOdailyUrl(raw.id);
+    if (title.length <= 2 || summary.length <= 2 || seenUrls.has(url)) {
+      continue;
+    }
+    seenUrls.add(url);
+    const parts = timestamp ? getDateParts(timestamp) : null;
+    items.push({
+      id: `odaily-${raw.id || url}`,
+      title,
+      summary,
+      timeLabel: parts ? `${parts.hour}:${parts.minute}` : "",
+      source: "Odaily星球日报",
+      url,
+      timestamp,
+    });
+    if (items.length >= limit) {
+      break;
+    }
+  }
+
+  return items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+}
+
 async function fetchHtmlWithRetry(url, retries = 2) {
   let lastError = null;
   for (let attempt = 0; attempt <= retries; attempt += 1) {
@@ -378,7 +489,7 @@ async function fetchHtmlWithRetry(url, retries = 2) {
         headers: {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
-          Referer: LIVES_URL,
+          Referer: url,
         },
         signal: controller.signal,
       });
@@ -398,11 +509,55 @@ async function fetchHtmlWithRetry(url, retries = 2) {
   throw lastError;
 }
 
-function mergeItems(visibleItems, supplementItems, limit) {
+async function fetchJsonWithRetry(url, params, retries = 2) {
+  const requestUrl = new URL(url);
+  for (const [key, value] of Object.entries(params || {})) {
+    requestUrl.searchParams.set(key, String(value));
+  }
+
+  let lastError = null;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort("timeout"), 30000);
+    try {
+      const response = await fetch(requestUrl.toString(), {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+          Accept: "application/json,text/plain,*/*",
+          "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+          Referer: ODAILY_NEWSFLASH_URL,
+          "x-locale": "zh-CN",
+        },
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      clearTimeout(timeout);
+      lastError = error;
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, 600 * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
+function mergeItems(...args) {
+  const limit = Number(args.pop() || 50);
+  const groups = args;
   const items = [];
   const seenUrls = new Set();
 
-  for (const item of [...visibleItems, ...supplementItems]) {
+  const sortedItems = groups.flat().sort(
+    (a, b) => (b.timestamp || 0) - (a.timestamp || 0),
+  );
+
+  for (const item of sortedItems) {
     if (!item || seenUrls.has(item.url)) {
       continue;
     }
@@ -434,15 +589,28 @@ export async function onRequestGet(context) {
   );
 
   try {
-    const html = await fetchHtmlWithRetry(LIVES_URL, 2);
-    const visibleItems = extractVisibleItems(html);
-    const supplementItems = extractSupplementItems(html);
-    const items = mergeItems(visibleItems, supplementItems, limit);
+    const [jinseHtml, foresightHtml, odailyPayload] = await Promise.all([
+      fetchHtmlWithRetry(LIVES_URL, 2).catch(() => ""),
+      fetchHtmlWithRetry(FORESIGHT_NEWS_URL, 2).catch(() => ""),
+      fetchJsonWithRetry(ODAILY_API_URL, { page: 1, size: limit }, 2).catch(() => null),
+    ]);
+    const visibleItems = jinseHtml ? extractVisibleItems(jinseHtml) : [];
+    const supplementItems = jinseHtml ? extractSupplementItems(jinseHtml) : [];
+    const jinseItems = mergeItems(visibleItems, supplementItems, limit);
+    const foresightItems = foresightHtml ? extractForesightItems(foresightHtml, limit) : [];
+    const odailyItems = odailyPayload ? extractOdailyItems(odailyPayload, limit) : [];
+    const items = mergeItems(jinseItems, foresightItems, odailyItems, limit);
+    if (!items.length) {
+      throw new Error("Failed to fetch Jinse, Foresight, and Odaily news");
+    }
     return jsonResponse(
       {
-        siteTitle: "金色财经快讯",
+        siteTitle: "数字资产快讯",
         sourceUrl: LIVES_URL,
         articleCount: items.length,
+        jinseArticleCount: jinseItems.length,
+        foresightArticleCount: foresightItems.length,
+        odailyArticleCount: odailyItems.length,
         items,
         isLive: true,
       },
