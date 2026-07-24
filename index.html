@@ -314,36 +314,6 @@
       min-width: 0;
     }
 
-    .header-links {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex: 0 0 auto;
-    }
-
-    .header-link-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 36px;
-      padding: 0 14px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: var(--control-bg);
-      color: var(--text-strong);
-      font-size: 13px;
-      font-weight: 600;
-      white-space: nowrap;
-      transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 180ms ease;
-    }
-
-    .header-link-btn:hover {
-      color: var(--accent);
-      border-color: var(--accent-hover);
-      background: var(--accent-soft);
-      transform: translateY(-1px);
-    }
-
     .search-box {
       position: relative;
       width: 38px;
@@ -497,10 +467,7 @@
     }
 
     .content-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 420px;
-      gap: 32px;
-      align-items: start;
+      display: block;
     }
 
     .content-layout > * {
@@ -509,12 +476,11 @@
 
     .intelligence-panel {
       display: grid;
-      grid-template-columns: minmax(480px, 0.7fr) minmax(680px, 1fr);
-      gap: 32px;
-      align-items: center;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 24px;
+      align-items: stretch;
       margin-bottom: 18px;
-      min-height: 150px;
-      padding: 32px 14px;
+      padding: 22px 24px;
       border: 1px solid var(--brief-panel-border);
       border-radius: 14px;
       background: var(--brief-panel-bg);
@@ -523,14 +489,6 @@
 
     .intelligence-panel > * {
       min-width: 0;
-    }
-
-    .intelligence-panel > div:first-child {
-      min-height: 90px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--brief-action-band-bg);
     }
 
     .intel-kicker,
@@ -560,19 +518,12 @@
       overflow-wrap: anywhere;
     }
 
-    .intelligence-panel .intel-kicker,
-    .intelligence-panel .intel-headline,
-    .intelligence-panel .intel-summary {
-      display: none;
-    }
-
     .intel-actions {
       display: flex;
       align-items: center;
-      justify-content: center;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 0;
+      gap: 8px;
+      margin-top: 16px;
     }
 
     .intel-action-btn {
@@ -601,7 +552,6 @@
       color: var(--brief-action-active-text);
     }
 
-    .mobile-crypto-btn,
     .mobile-crypto-sort {
       display: none;
     }
@@ -764,7 +714,7 @@
 
     .intel-metrics {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
       align-content: stretch;
       min-width: 0;
@@ -822,6 +772,16 @@
       justify-content: flex-end;
     }
 
+    .header-sort-switch {
+      flex: 0 0 auto;
+    }
+
+    .header-sort-switch .sort-btn {
+      min-height: 36px;
+      padding: 0 16px;
+      font-size: 13px;
+    }
+
     .topic-btn,
     .sort-btn {
       display: inline-flex;
@@ -856,19 +816,28 @@
 
     .news-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 28px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px;
     }
 
     .side-panel {
-      display: grid;
+      display: none;
       gap: 14px;
       align-content: start;
     }
 
     .jinse-list {
       display: grid;
-      gap: 12px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .crypto-view-mode .primary-news-panel {
+      display: none;
+    }
+
+    .crypto-view-mode .side-panel {
+      display: grid;
     }
 
     .jinse-card {
@@ -895,15 +864,7 @@
       align-items: center;
       gap: 6px;
       font-weight: 600;
-    }
-
-    .jinse-source::before {
-      content: "";
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      background: var(--jinse-dot);
-      flex: 0 0 auto;
+      min-width: 0;
     }
 
     .jinse-card h3 {
@@ -989,9 +950,6 @@
       border: 1px solid var(--line);
       background: var(--panel);
       transition: all 0.3s ease;
-      opacity: 0;
-      transform: translateY(10px);
-      animation: card-in 0.4s ease forwards;
     }
 
     .news-card:hover {
@@ -1065,14 +1023,42 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
+      min-width: 0;
     }
 
-    .source::before {
-      content: "";
-      width: 6px;
-      height: 6px;
-      border-radius: 999px;
-      background: var(--accent);
+    .source-logo {
+      position: relative;
+      display: inline-grid;
+      width: 18px;
+      height: 18px;
+      flex: 0 0 18px;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: #fff;
+      box-shadow: 0 2px 7px rgba(15, 37, 70, 0.12);
+    }
+
+    .source-logo img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #fff;
+    }
+
+    .source-logo-fallback {
+      color: var(--panel-accent);
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .source-label {
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
 
     .badge {
@@ -1501,13 +1487,6 @@
       }
     }
 
-    @keyframes card-in {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: .5; }
@@ -1557,7 +1536,8 @@
       }
 
       .content-layout,
-      .news-grid {
+      .news-grid,
+      .jinse-list {
         grid-template-columns: 1fr;
         gap: 18px;
       }
@@ -1567,10 +1547,6 @@
         gap: 14px;
         min-height: 0;
         padding: 18px;
-      }
-
-      .intelligence-panel > div:first-child {
-        min-height: 78px;
       }
 
       .intel-metrics {
@@ -1689,7 +1665,7 @@
         display: none;
       }
 
-      .header-links {
+      .header-sort-switch {
         display: none;
       }
 
@@ -1752,13 +1728,13 @@
         white-space: nowrap;
       }
 
-      .mobile-crypto-btn {
+      .crypto-view-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
       }
 
-      .mobile-crypto-sort {
+      .crypto-view-mode .mobile-crypto-sort {
         display: flex;
         width: 100%;
         align-items: center;
@@ -1915,7 +1891,8 @@
       }
 
       .content-layout,
-      .news-grid {
+      .news-grid,
+      .jinse-list {
         gap: 12px;
       }
 
@@ -1927,22 +1904,12 @@
       }
 
       .side-panel {
-        display: none;
         min-width: 0;
         margin-top: 8px;
       }
 
-      .mobile-crypto-mode .primary-news-panel {
-        display: none;
-      }
-
-      .mobile-crypto-mode .side-panel {
-        display: grid;
+      .crypto-view-mode .side-panel {
         margin-top: 0;
-      }
-
-      .mobile-crypto-mode .side-heading .sort-switch {
-        display: none;
       }
     }
 
@@ -1990,10 +1957,6 @@
         </div>
       </div>
       <div class="header-actions">
-        <nav class="header-links" aria-label="外部资讯入口">
-          <a class="header-link-btn" href="https://www.perplexity.ai/discover/tech" target="_blank" rel="noopener noreferrer">perplexity</a>
-          <a class="header-link-btn" href="https://cn.wsj.com/" target="_blank" rel="noopener noreferrer">华尔街日报</a>
-        </nav>
         <label class="search-box" for="searchInput">
           <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
             <circle cx="11" cy="11" r="7"/>
@@ -2013,6 +1976,10 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"/>
           </svg>
         </button>
+        <div class="sort-switch header-sort-switch" aria-label="新闻排序方式">
+          <button class="sort-btn is-active" type="button" data-sort-mode="smart">智能排序</button>
+          <button class="sort-btn" type="button" data-sort-mode="latest">最新优先</button>
+        </div>
       </div>
     </div>
   </header>
@@ -2028,7 +1995,7 @@
             <button class="intel-action-btn" type="button" data-quick-filter="high">只看高影响</button>
             <button class="intel-action-btn" type="button" data-quick-filter="risk">只看风险</button>
             <button class="intel-action-btn" type="button" data-intel-command="show-highlights">今日重点</button>
-            <button class="intel-action-btn mobile-crypto-btn" id="mobileCryptoBtn" type="button" data-intel-command="toggle-mobile-crypto" aria-pressed="false">数字资产</button>
+            <button class="intel-action-btn crypto-view-btn" id="cryptoViewBtn" type="button" data-intel-command="toggle-crypto-view" aria-pressed="false">数字资产快讯</button>
           </div>
           <div class="mobile-crypto-sort" aria-label="数字资产排序方式">
             <button class="sort-btn is-active" type="button" data-sort-mode="smart">智能排序</button>
@@ -2067,10 +2034,6 @@
         <aside class="side-panel">
           <div class="side-heading">
             <h2>数字资产快讯</h2>
-            <div class="sort-switch" aria-label="排序方式">
-              <button class="sort-btn is-active" type="button" data-sort-mode="smart">智能排序</button>
-              <button class="sort-btn" type="button" data-sort-mode="latest">最新优先</button>
-            </div>
           </div>
           <div class="jinse-list" id="jinseList"></div>
           <div class="more-wrap side-more-wrap">
@@ -2173,7 +2136,7 @@
         jinseList: document.getElementById("jinseList"),
         topicTabs: document.getElementById("topicTabs"),
         intelActions: document.getElementById("intelActions"),
-        mobileCryptoBtn: document.getElementById("mobileCryptoBtn"),
+        cryptoViewBtn: document.getElementById("cryptoViewBtn"),
         intelHeadline: document.getElementById("intelHeadline"),
         intelSummary: document.getElementById("intelSummary"),
         intelHighImpact: document.getElementById("intelHighImpact"),
@@ -2211,6 +2174,21 @@
         { id: "source:jingji-global", label: "21财经·全球", source: "21财经" }
       ];
 
+      const SOURCE_LOGOS = Object.freeze({
+        "人民财讯": "assets/source-logos/stcn.ico",
+        "证券时报·e公司": "assets/source-logos/stcn.ico",
+        "界面新闻": "assets/source-logos/jiemian.ico",
+        "科创板日报": "assets/source-logos/starmarket.ico",
+        "21财经": "assets/source-logos/21jingji.jpg",
+        "央视新闻": "assets/source-logos/cctv.jpg",
+        "新华社": "assets/source-logos/xinhua.ico",
+        "风向旗参考快讯": "assets/source-logos/fengxiangqi.png",
+        "金色财经": "assets/source-logos/jinse.ico",
+        "Foresight News": "assets/source-logos/foresight-icon.png",
+        "Odaily星球日报": "assets/source-logos/odaily.svg",
+        "PANews": "assets/source-logos/panews.ico"
+      });
+
       const HIGH_IMPACT_KEYWORDS = ["重大", "突发", "首个", "首次", "创新高", "大幅", "涨停", "跌停", "暴涨", "暴跌", "并购", "重组", "签约", "中标", "订单", "业绩", "净利", "增长", "减持", "增持", "处罚", "调查", "违约", "退市", "暂停"];
       const POSITIVE_KEYWORDS = ["增长", "提升", "创新高", "涨停", "上调", "批准", "中标", "签约", "增持", "盈利", "复苏", "突破"];
       const RISK_KEYWORDS = ["风险", "下跌", "跌停", "暴跌", "处罚", "调查", "违约", "亏损", "减持", "退市", "暂停", "召回", "预警"];
@@ -2237,7 +2215,7 @@
       els.intelActions.addEventListener("click", function (event) {
         const quickButton = event.target.closest("[data-quick-filter]");
         if (quickButton) {
-          setMobileCryptoMode(false);
+          setCryptoViewMode(false);
           const nextFilter = quickButton.getAttribute("data-quick-filter") || "all";
           state.quickFilter = state.quickFilter === nextFilter ? "all" : nextFilter;
           syncIntelActionButtons();
@@ -2255,8 +2233,8 @@
           toggleBriefSpeech();
         } else if (command === "show-highlights") {
           openHighlightsModal();
-        } else if (command === "toggle-mobile-crypto") {
-          setMobileCryptoMode(!document.body.classList.contains("mobile-crypto-mode"));
+        } else if (command === "toggle-crypto-view") {
+          setCryptoViewMode(!document.body.classList.contains("crypto-view-mode"));
         }
       });
 
@@ -2626,12 +2604,12 @@
         });
       }
 
-      function setMobileCryptoMode(enabled) {
+      function setCryptoViewMode(enabled) {
         const isActive = Boolean(enabled);
-        document.body.classList.toggle("mobile-crypto-mode", isActive);
-        els.mobileCryptoBtn.classList.toggle("is-active", isActive);
-        els.mobileCryptoBtn.setAttribute("aria-pressed", String(isActive));
-        els.mobileCryptoBtn.textContent = isActive ? "返回主新闻" : "数字资产";
+        document.body.classList.toggle("crypto-view-mode", isActive);
+        els.cryptoViewBtn.classList.toggle("is-active", isActive);
+        els.cryptoViewBtn.setAttribute("aria-pressed", String(isActive));
+        els.cryptoViewBtn.textContent = isActive ? "返回主新闻" : "数字资产快讯";
       }
 
       function closeHighlightsModal() {
@@ -3078,7 +3056,7 @@
 
         els.topicTabs.innerHTML = tabs.map(function (tab) {
           return '<button class="topic-btn ' + (tab.id === state.activeTopic ? 'is-active' : '') + '" type="button" data-topic-id="' + escapeAttr(tab.id) + '">' +
-            escapeHtml(tab.label) + ' ' + escapeHtml(tab.count) +
+            escapeHtml(tab.label) + (tab.id === "all" ? ' ' + escapeHtml(tab.count) : '') +
           '</button>';
         }).join("");
       }
@@ -3236,7 +3214,7 @@
         return (
           '<article class="jinse-card">' +
             '<div class="jinse-meta">' +
-              '<span class="jinse-source">' + escapeHtml(item.source || "金色财经") + '</span>' +
+              createSourceMarkup(item.source || "金色财经", "jinse-source") +
               '<span>' + escapeHtml(item.timeLabel || "") + '</span>' +
             '</div>' +
             '<h3>' + escapeHtml(item.title) + '</h3>' +
@@ -3258,7 +3236,7 @@
         return (
           '<article class="jinse-card">' +
             '<div class="jinse-meta">' +
-              '<span class="jinse-source">' + escapeHtml(item.source || "金色财经") + '</span>' +
+              createSourceMarkup(item.source || "金色财经", "jinse-source") +
               '<span>' + escapeHtml(item.timeLabel || "") + '</span>' +
             '</div>' +
             '<h3>' + escapeHtml(item.title) + '</h3>' +
@@ -3308,9 +3286,9 @@
           item.summary = " ";
         }
         return (
-          '<article class="' + cardClass + '" style="animation-delay:' + Math.min(index * 35, 350) + 'ms">' +
+          '<article class="' + cardClass + '">' +
             '<div class="card-head">' +
-              '<span class="source">' + escapeHtml(item.source) + '</span>' +
+              createSourceMarkup(item.source, "source") +
               '<span class="card-tags">' +
                 (item.isRed ? '<span class="badge">标红</span>' : '') +
                 '<span class="badge smart">' + escapeHtml(ai.impact || "一般") + '</span>' +
@@ -3357,6 +3335,32 @@
 
       function escapeAttr(value) {
         return escapeHtml(value);
+      }
+
+      function getSourceLogoPath(source) {
+        const name = String(source || "").trim();
+        if (SOURCE_LOGOS[name]) return SOURCE_LOGOS[name];
+        if (name.includes("央视")) return SOURCE_LOGOS["央视新闻"];
+        if (name.includes("新华")) return SOURCE_LOGOS["新华社"];
+        if (name.includes("证券时报") || name.includes("人民财讯")) return SOURCE_LOGOS["人民财讯"];
+        return "";
+      }
+
+      function createSourceMarkup(source, className) {
+        const name = String(source || "未知来源").trim() || "未知来源";
+        const logoPath = getSourceLogoPath(name);
+        const fallback = /^[A-Za-z]/.test(name) ? name.charAt(0).toUpperCase() : name.charAt(0);
+        return (
+          '<span class="' + escapeAttr(className) + '">' +
+            '<span class="source-logo" aria-hidden="true">' +
+              '<span class="source-logo-fallback">' + escapeHtml(fallback) + '</span>' +
+              (logoPath
+                ? '<img src="' + escapeAttr(logoPath) + '" alt="" loading="lazy" onerror="this.remove()">'
+                : '') +
+            '</span>' +
+            '<span class="source-label">' + escapeHtml(name) + '</span>' +
+          '</span>'
+        );
       }
 
       function getSpeechId(item) {
