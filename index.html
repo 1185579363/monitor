@@ -259,6 +259,17 @@
       min-width: 0;
     }
 
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand-title-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+    }
+
     .brand-mark {
       width: 32px;
       height: 32px;
@@ -295,6 +306,17 @@
       font-size: 12px;
       font-weight: 500;
       letter-spacing: 0;
+    }
+
+    .icon-btn.brand-refresh-btn {
+      width: 28px;
+      min-height: 28px;
+      flex: 0 0 28px;
+    }
+
+    .icon-btn.brand-refresh-btn svg {
+      width: 16px;
+      height: 16px;
     }
 
     .brand-subtitle {
@@ -378,23 +400,6 @@
     .search-input:focus {
       border-color: var(--accent-hover);
       box-shadow: 0 0 0 4px var(--focus-ring);
-    }
-
-    .status-light {
-      position: relative;
-      width: 12px;
-      height: 12px;
-      border-radius: 999px;
-      background: var(--accent);
-    }
-
-    .status-light::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background: var(--ping-bg);
-      animation: ping 1.8s ease-out infinite;
     }
 
     .icon-btn {
@@ -552,7 +557,7 @@
       color: var(--brief-action-active-text);
     }
 
-    .mobile-crypto-sort {
+    .mobile-home-sort {
       display: none;
     }
 
@@ -1476,17 +1481,6 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
 
-    @keyframes ping {
-      0% {
-        transform: scale(1);
-        opacity: 0.75;
-      }
-      100% {
-        transform: scale(2.4);
-        opacity: 0;
-      }
-    }
-
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: .5; }
@@ -1608,8 +1602,12 @@
         gap: 8px;
       }
 
-      .brand > div:last-child {
+      .brand-copy {
         min-width: 0;
+      }
+
+      .brand-title-row {
+        gap: 2px;
       }
 
       .brand-mark {
@@ -1662,7 +1660,8 @@
       }
 
       .search-box {
-        display: none;
+        display: block;
+        width: 38px;
       }
 
       .header-sort-switch {
@@ -1676,15 +1675,15 @@
         font-size: 12px;
       }
 
-      .status-light {
-        display: none;
-        width: 9px;
-        height: 9px;
-      }
-
       .icon-btn {
         width: 38px;
         min-height: 38px;
+      }
+
+      .icon-btn.brand-refresh-btn {
+        width: 28px;
+        min-height: 28px;
+        flex-basis: 28px;
       }
 
       .news-card,
@@ -1734,17 +1733,16 @@
         justify-content: center;
       }
 
-      .crypto-view-mode .mobile-crypto-sort {
+      body:not(.crypto-view-mode) .mobile-home-sort {
         display: flex;
         width: 100%;
         align-items: center;
         justify-content: center;
         gap: 8px;
         padding-top: 8px;
-        border-top: 1px solid var(--brief-panel-border);
       }
 
-      .mobile-crypto-sort .sort-btn {
+      .mobile-home-sort .sort-btn {
         min-height: 38px;
         padding: 0 18px;
         font-size: 12px;
@@ -1951,8 +1949,15 @@
             <path d="M20.45 7.25c1.42 1.35 2.05 2.9 2.05 4.85 0 1.95-.63 3.5-2.05 4.85" stroke="var(--brand-icon-wave-soft)" stroke-width="1.35" stroke-linecap="round"/>
           </svg>
         </div>
-        <div>
-          <h1 class="brand-title"><span class="brand-title-text">每日股市快讯</span><small>7*24小时快讯</small></h1>
+        <div class="brand-copy">
+          <div class="brand-title-row">
+            <h1 class="brand-title"><span class="brand-title-text">每日股市快讯</span><small>7*24小时快讯</small></h1>
+            <button class="icon-btn brand-refresh-btn" id="refreshBtn" type="button" aria-label="刷新新闻">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"/>
+              </svg>
+            </button>
+          </div>
           <div class="brand-subtitle" id="headerStamp">正在连接实时新闻接口</div>
         </div>
       </div>
@@ -1968,12 +1973,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.2m0 13.6V21m6.36-15.36-1.56 1.56M7.2 16.8l-1.56 1.56M21 12h-2.2M5.2 12H3m15.36 6.36-1.56-1.56M7.2 7.2 5.64 5.64"/>
             <circle cx="12" cy="12" r="4"/>
-          </svg>
-        </button>
-        <span class="status-light" aria-hidden="true"></span>
-        <button class="icon-btn" id="refreshBtn" type="button" aria-label="刷新新闻">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"/>
           </svg>
         </button>
         <div class="sort-switch header-sort-switch" aria-label="新闻排序方式">
@@ -1997,7 +1996,7 @@
             <button class="intel-action-btn" type="button" data-intel-command="show-highlights">今日重点</button>
             <button class="intel-action-btn crypto-view-btn" id="cryptoViewBtn" type="button" data-intel-command="toggle-crypto-view" aria-pressed="false">数字资产快讯</button>
           </div>
-          <div class="mobile-crypto-sort" aria-label="数字资产排序方式">
+          <div class="mobile-home-sort" aria-label="主新闻排序方式">
             <button class="sort-btn is-active" type="button" data-sort-mode="smart">智能排序</button>
             <button class="sort-btn" type="button" data-sort-mode="latest">最新优先</button>
           </div>
