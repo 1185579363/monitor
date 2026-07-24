@@ -4,6 +4,8 @@ const FORESIGHT_BASE_URL = "https://foresightnews.pro";
 const FORESIGHT_NEWS_URL = `${FORESIGHT_BASE_URL}/news`;
 const ODAILY_NEWSFLASH_URL = "https://www.odaily.news/zh-CN/newsflash";
 const ODAILY_API_URL = "https://web-api.odaily.news/newsflash/page";
+const PANEWS_NEWSFLASH_URL = "https://www.panewslab.com/zh/newsflash";
+const PANEWS_API_URL = "https://universal-api.panewslab.com/articles";
 const SHANGHAI_TZ = "Asia/Shanghai";
 
 function absoluteUrl(url) {
@@ -32,6 +34,14 @@ function absoluteOdailyUrl(id) {
     return ODAILY_NEWSFLASH_URL;
   }
   return `${ODAILY_NEWSFLASH_URL}/${encodeURIComponent(itemId)}`;
+}
+
+function absolutePanewsUrl(id) {
+  const itemId = String(id || "").trim();
+  if (!itemId) {
+    return PANEWS_NEWSFLASH_URL;
+  }
+  return `https://www.panewslab.com/zh/articles/${encodeURIComponent(itemId)}`;
 }
 
 function decodeHtml(value) {
@@ -479,6 +489,47 @@ function extractOdailyItems(payload, limit) {
   return items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 }
 
+function extractPanewsItems(payload, limit) {
+  const list = Array.isArray(payload) ? payload : [];
+  const items = [];
+  const seenUrls = new Set();
+
+  for (const raw of list) {
+    if (!raw || typeof raw !== "object") {
+      continue;
+    }
+    const id = String(raw.id || "").trim();
+    const title = stripTags(raw.title || "");
+    const summary = stripTags(raw.desc || raw.pushDesc || "");
+    const timestamp = Date.parse(raw.publishedAt || raw.createdAt || "");
+    const url = absolutePanewsUrl(id);
+    if (
+      title.length <= 2 ||
+      summary.length <= 2 ||
+      !Number.isFinite(timestamp) ||
+      seenUrls.has(url)
+    ) {
+      continue;
+    }
+    seenUrls.add(url);
+    const parts = getDateParts(timestamp);
+    items.push({
+      id: `panews-${id || url}`,
+      title,
+      summary,
+      timeLabel: `${parts.hour}:${parts.minute}`,
+      source: "PANews",
+      url,
+      timestamp,
+    });
+    if (items.length >= limit) {
+      break;
+    }
+  }
+
+  return items.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+}
+
 async function fetchHtmlWithRetry(url, retries = 2) {
   let lastError = null;
   for (let attempt = 0; attempt <= retries; attempt += 1) {
@@ -509,7 +560,7 @@ async function fetchHtmlWithRetry(url, retries = 2) {
   throw lastError;
 }
 
-async function fetchJsonWithRetry(url, params, retries = 2) {
+async function fetchJsonWithRetry(url, params, retries = 2, extraHeaders = {}) {
   const requestUrl = new URL(url);
   for (const [key, value] of Object.entries(params || {})) {
     requestUrl.searchParams.set(key, String(value));
@@ -526,8 +577,7 @@ async function fetchJsonWithRetry(url, params, retries = 2) {
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
           Accept: "application/json,text/plain,*/*",
           "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
-          Referer: ODAILY_NEWSFLASH_URL,
-          "x-locale": "zh-CN",
+          ...extraHeaders,
         },
         signal: controller.signal,
       });
@@ -589,19 +639,31 @@ export async function onRequestGet(context) {
   );
 
   try {
-    const [jinseHtml, foresightHtml, odailyPayload] = await Promise.all([
+    const [jinseHtml, foresightHtml, odailyPayload, panewsPayload] = await Promise.all([
       fetchHtmlWithRetry(LIVES_URL, 2).catch(() => ""),
       fetchHtmlWithRetry(FORESIGHT_NEWS_URL, 2).catch(() => ""),
-      fetchJsonWithRetry(ODAILY_API_URL, { page: 1, size: limit }, 2).catch(() => null),
+      fetchJsonWithRetry(
+        ODAILY_API_URL,
+        { page: 1, size: limit },
+        2,
+        { Referer: ODAILY_NEWSFLASH_URL, "x-locale": "zh-CN" },
+      ).catch(() => null),
+      fetchJsonWithRetry(
+        PANEWS_API_URL,
+        { type: "NEWS", isShowInList: true, take: limit, skip: 0 },
+        2,
+        { Referer: PANEWS_NEWSFLASH_URL, "PA-Accept-Language": "zh" },
+      ).catch(() => null),
     ]);
     const visibleItems = jinseHtml ? extractVisibleItems(jinseHtml) : [];
     const supplementItems = jinseHtml ? extractSupplementItems(jinseHtml) : [];
     const jinseItems = mergeItems(visibleItems, supplementItems, limit);
     const foresightItems = foresightHtml ? extractForesightItems(foresightHtml, limit) : [];
     const odailyItems = odailyPayload ? extractOdailyItems(odailyPayload, limit) : [];
-    const items = mergeItems(jinseItems, foresightItems, odailyItems, limit);
+    const panewsItems = panewsPayload ? extractPanewsItems(panewsPayload, limit) : [];
+    const items = mergeItems(jinseItems, foresightItems, odailyItems, panewsItems, limit);
     if (!items.length) {
-      throw new Error("Failed to fetch Jinse, Foresight, and Odaily news");
+      throw new Error("Failed to fetch Jinse, Foresight, Odaily, and PANews news");
     }
     return jsonResponse(
       {
@@ -611,6 +673,7 @@ export async function onRequestGet(context) {
         jinseArticleCount: jinseItems.length,
         foresightArticleCount: foresightItems.length,
         odailyArticleCount: odailyItems.length,
+        panewsArticleCount: panewsItems.length,
         items,
         isLive: true,
       },
