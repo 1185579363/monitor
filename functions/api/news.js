@@ -224,53 +224,102 @@ function extractJiemianArticleImage(html) {
   return "";
 }
 
-async function fetchJsonWithRetry(url, options, retries = 2) {
-  let lastError = null;
-  for (let attempt = 0; attempt <= retries; attempt += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort("timeout"), 30000);
-    try {
-      const response = await fetch(url, { ...options, signal: controller.signal });
-      clearTimeout(timeout);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      return await response.json();
-    } catch (error) {
-      clearTimeout(timeout);
-      lastError = error;
-      if (attempt < retries) {
-        await new Promise((resolve) => setTimeout(resolve, 600 * (attempt + 1)));
-      }
+// Created per invocation: concurrent visitors must not share request counters.
+// Count redirects and retries too, leaving room below the free plan's limit.
+function createNewsClient({ maxRequests = 40, timeoutMs = 6000, totalTimeoutMs = 22000 } = {}) {
+  let requestCount = 0;
+  const deadline = Date.now() + totalTimeoutMs;
+
+  function checkBudget() {
+    if (Date.now() >= deadline) {
+      const error = new Error("News fetch deadline exceeded");
+      error.stopRetry = true;
+      throw error;
+    }
+    if (requestCount >= maxRequests) {
+      const error = new Error("News request budget exhausted");
+      error.stopRetry = true;
+      throw error;
     }
   }
-  throw lastError;
-}
 
-async function fetchTextWithRetry(url, options, retries = 2) {
-  let lastError = null;
-  for (let attempt = 0; attempt <= retries; attempt += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort("timeout"), 30000);
-    try {
-      const response = await fetch(url, { ...options, signal: controller.signal });
-      clearTimeout(timeout);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+  async function request(url, options = {}, retries = 1, format = "text") {
+    const maxRetries = Math.min(1, Math.max(0, retries));
+    for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+      checkBudget();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), Math.min(timeoutMs, deadline - Date.now()));
+      let lastError;
+      try {
+        let currentUrl = new URL(url);
+        let currentOptions = { ...options };
+        for (let redirects = 0; ; redirects += 1) {
+          checkBudget();
+          requestCount += 1;
+          const response = await fetch(currentUrl.toString(), {
+            ...currentOptions,
+            redirect: "manual",
+            signal: controller.signal,
+          });
+          if ([301, 302, 303, 307, 308].includes(response.status)) {
+            const location = response.headers.get("location");
+            await response.body?.cancel();
+            if (!location || redirects >= 3) {
+              const error = new Error("Invalid or excessive upstream redirects");
+              error.stopRetry = true;
+              throw error;
+            }
+            const nextUrl = new URL(location, currentUrl);
+            if (!/^https?:$/.test(nextUrl.protocol)) {
+              throw new Error("Invalid upstream redirect protocol");
+            }
+            const headers = new Headers(currentOptions.headers);
+            if (nextUrl.origin !== currentUrl.origin) {
+              headers.delete("authorization");
+              headers.delete("cookie");
+            }
+            const method = (currentOptions.method || "GET").toUpperCase();
+            if ((response.status === 303 && method !== "HEAD") ||
+                ([301, 302].includes(response.status) && method === "POST")) {
+              currentOptions = { ...currentOptions, method: "GET", body: undefined };
+              headers.delete("content-type");
+              headers.delete("content-length");
+            }
+            currentOptions.headers = headers;
+            currentUrl = nextUrl;
+            continue;
+          }
+          if (!response.ok) {
+            await response.body?.cancel();
+            const error = new Error(`HTTP ${response.status} from ${currentUrl.hostname}`);
+            error.stopRetry = response.status < 500 && response.status !== 429;
+            throw error;
+          }
+          // Keep the timeout active until the entire body has been read.
+          return await (format === "json" ? response.json() : response.text());
+        }
+      } catch (error) {
+        lastError = error;
+      } finally {
+        clearTimeout(timeout);
       }
-      return await response.text();
-    } catch (error) {
-      clearTimeout(timeout);
-      lastError = error;
-      if (attempt < retries) {
-        await new Promise((resolve) => setTimeout(resolve, 600 * (attempt + 1)));
+      if (lastError.stopRetry || attempt >= maxRetries || controller.signal.aborted ||
+          /too many subrequests/i.test(String(lastError))) {
+        throw lastError;
       }
+      checkBudget();
+      await new Promise((resolve) => setTimeout(resolve, 250));
     }
   }
-  throw lastError;
+
+  return {
+    fetchJsonWithRetry: (url, options, retries) => request(url, options, retries, "json"),
+    fetchTextWithRetry: (url, options, retries) => request(url, options, retries, "text"),
+    get requestCount() { return requestCount; },
+  };
 }
 
-async function fetchStcnPage(pageTime, lastTime) {
+async function fetchStcnPage(client, pageTime, lastTime) {
   const url = new URL(LIST_ENDPOINT);
   url.searchParams.set("type", "kx");
   if (pageTime !== undefined && pageTime !== null) {
@@ -280,7 +329,7 @@ async function fetchStcnPage(pageTime, lastTime) {
     url.searchParams.set("last_time", String(lastTime));
   }
 
-  const payload = await fetchJsonWithRetry(
+  const payload = await client.fetchJsonWithRetry(
     url.toString(),
     {
       headers: {
@@ -299,15 +348,23 @@ async function fetchStcnPage(pageTime, lastTime) {
   return payload;
 }
 
-async function fetchStcnItems(maxPages) {
+async function fetchStcnItems(client, maxPages) {
   let pageTime;
   let lastTime;
   let pagesFetched = 0;
   const seenIds = new Set();
   const items = [];
+  let error = "";
 
   for (let i = 0; i < maxPages; i += 1) {
-    const payload = await fetchStcnPage(pageTime, lastTime);
+    let payload;
+    try {
+      payload = await fetchStcnPage(client, pageTime, lastTime);
+    } catch (cause) {
+      if (!items.length) throw cause;
+      error = String(cause);
+      break;
+    }
     const rows = Array.isArray(payload.data) ? payload.data : [];
     if (!rows.length) {
       break;
@@ -330,7 +387,7 @@ async function fetchStcnItems(maxPages) {
   }
 
   items.sort((a, b) => b.timestamp - a.timestamp);
-  return { items, pagesFetched };
+  return { items, pagesFetched, error };
 }
 
 function decodeJiemianAjaxHtml(payloadText) {
@@ -415,17 +472,18 @@ function parseJiemianChunk(rawHtml, currentDate) {
   return { items, currentDate: workingDate };
 }
 
-async function enrichJiemianImages(items, limit = 18) {
-  let enriched = 0;
+async function enrichJiemianImages(client, items, limit = 4) {
+  let attempted = 0;
   for (const item of items) {
-    if (enriched >= limit) {
+    if (attempted >= limit) {
       break;
     }
     if (item.imageUrl) {
       continue;
     }
+    attempted += 1;
     try {
-      const articleHtml = await fetchTextWithRetry(
+      const articleHtml = await client.fetchTextWithRetry(
         item.url,
         {
           headers: {
@@ -436,7 +494,7 @@ async function enrichJiemianImages(items, limit = 18) {
             Pragma: "no-cache",
           },
         },
-        1,
+        0,
       );
       const imageUrl = extractJiemianArticleImage(articleHtml);
       if (!imageUrl) {
@@ -444,15 +502,17 @@ async function enrichJiemianImages(items, limit = 18) {
       }
       item.imageUrl = imageUrl;
       item.imageAlt = item.title || "";
-      enriched += 1;
-    } catch (error) {}
+    } catch (error) {
+      console.warn("[news] Optional Jiemian image skipped:", String(error));
+      break;
+    }
   }
 }
 
-async function fetchJiemianItems(maxPages = 3) {
+async function fetchJiemianItems(client, maxPages = 3) {
   const desktopUrl = new URL(JIEMIAN_DESKTOP_URL);
   desktopUrl.searchParams.set("_", String(Date.now()));
-  const desktopHtml = await fetchTextWithRetry(
+  const desktopHtml = await client.fetchTextWithRetry(
     desktopUrl.toString(),
     {
       headers: {
@@ -469,7 +529,7 @@ async function fetchJiemianItems(maxPages = 3) {
 
   const mobileUrl = new URL(JIEMIAN_MOBILE_URL);
   mobileUrl.searchParams.set("_", String(Date.now()));
-  const firstPageHtml = await fetchTextWithRetry(
+  const firstPageHtml = await client.fetchTextWithRetry(
     mobileUrl.toString(),
     {
       headers: {
@@ -505,7 +565,7 @@ async function fetchJiemianItems(maxPages = 3) {
     const ajaxUrl = new URL(JIEMIAN_AJAX_URL);
     ajaxUrl.searchParams.set("page", String(page));
     ajaxUrl.searchParams.set("date", dateSeed);
-    const chunkText = await fetchTextWithRetry(
+    const chunkText = await client.fetchTextWithRetry(
       ajaxUrl.toString(),
       {
         headers: {
@@ -527,7 +587,6 @@ async function fetchJiemianItems(maxPages = 3) {
   }
 
   combinedItems.sort((a, b) => b.timestamp - a.timestamp);
-  await enrichJiemianImages(combinedItems);
   return combinedItems;
 }
 
@@ -594,8 +653,8 @@ function normalizeKejiItem(entry) {
   };
 }
 
-async function fetchKejiItems(limit = 30) {
-  const payload = await fetchJsonWithRetry(
+async function fetchKejiItems(client, limit = 30) {
+  const payload = await client.fetchJsonWithRetry(
     KEJI_FEED_URL,
     {
       headers: {
@@ -671,7 +730,7 @@ function normalizeStarMarketItem(raw) {
   };
 }
 
-async function fetchStarMarketItems(limit = 30) {
+async function fetchStarMarketItems(client, limit = 30) {
   const url = new URL(STAR_MARKET_CACHE_URL);
   url.searchParams.set("rn", String(limit));
   url.searchParams.set("lastTime", String(Math.floor(Date.now() / 1000)));
@@ -679,7 +738,7 @@ async function fetchStarMarketItems(limit = 30) {
   url.searchParams.set("channel", "100");
   url.searchParams.set("name", "telegraph");
 
-  const payload = await fetchJsonWithRetry(
+  const payload = await client.fetchJsonWithRetry(
     url.toString(),
     {
       headers: {
@@ -757,7 +816,7 @@ function normalizeJingjiGlobalItem(raw) {
   };
 }
 
-async function fetchJingjiGlobalItems(limit = 30) {
+async function fetchJingjiGlobalItems(client, limit = 30) {
   const commonHeaders = {
     "User-Agent":
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
@@ -765,7 +824,7 @@ async function fetchJingjiGlobalItems(limit = 30) {
     Origin: "https://www.21jingji.com",
     Referer: JINGJI_GLOBAL_URL,
   };
-  const authPayload = await fetchJsonWithRetry(
+  const authPayload = await client.fetchJsonWithRetry(
     JINGJI_AUTH_URL,
     { method: "POST", headers: commonHeaders },
     2,
@@ -781,7 +840,7 @@ async function fetchJingjiGlobalItems(limit = 30) {
       const url = new URL(JINGJI_GLOBAL_API_URL);
       url.searchParams.set("page", String(index + 1));
       url.searchParams.set("type", "json");
-      return fetchJsonWithRetry(
+      return client.fetchJsonWithRetry(
         url.toString(),
         {
           method: "POST",
@@ -847,7 +906,7 @@ function jsonResponse(body, status = 200, cacheable = false) {
     headers: {
       "content-type": "application/json; charset=utf-8",
       "cache-control": cacheable
-        ? "public, max-age=60, stale-while-revalidate=300"
+        ? `public, max-age=${body.isPartial ? 15 : 60}`
         : "no-store",
     },
   });
@@ -861,39 +920,86 @@ export async function onRequestGet(context) {
   );
   const cacheUrl = new URL(requestUrl.origin + requestUrl.pathname);
   cacheUrl.searchParams.set("pages", String(pages));
+  cacheUrl.searchParams.set("version", "news-budget-20261024");
   const cacheKey = new Request(cacheUrl.toString(), { method: "GET" });
   const edgeCache = caches.default;
-  const cachedResponse = await edgeCache.match(cacheKey);
+  const cachedResponse = requestUrl.searchParams.get("refresh") === "1"
+    ? null : await edgeCache.match(cacheKey);
   if (cachedResponse) {
     return cachedResponse;
   }
 
+  const client = createNewsClient();
+  const sourceStatus = {};
+  async function collectSource(name, job) {
+    const startedAt = Date.now();
+    try {
+      const result = await job();
+      const items = Array.isArray(result) ? result : result.items;
+      if (!items.length) throw new Error("Upstream returned no news items");
+      sourceStatus[name] = {
+        state: result.error ? "partial" : "ok",
+        articleCount: items.length,
+        durationMs: Date.now() - startedAt,
+        ...(result.error ? { error: result.error } : {}),
+      };
+      if (result.error) console.warn(`[news] ${name}:`, result.error);
+      return { items, pagesFetched: result.pagesFetched || 0 };
+    } catch (error) {
+      sourceStatus[name] = {
+        state: "failed", articleCount: 0,
+        durationMs: Date.now() - startedAt, error: String(error),
+      };
+      console.warn(`[news] ${name}:`, String(error));
+      return { items: [], pagesFetched: 0 };
+    }
+  }
+
   try {
-    const [{ items: stcnItems, pagesFetched }, jiemianItems, kejiItems, starMarketItems, jingjiGlobalItems] = await Promise.all([
-      fetchStcnItems(pages),
-      fetchJiemianItems(3).catch(() => []),
-      fetchKejiItems(30).catch(() => []),
-      fetchStarMarketItems(30).catch(() => []),
-      fetchJingjiGlobalItems(30).catch(() => []),
+    const [stcn, jiemian, keji, starMarket, jingjiGlobal] = await Promise.all([
+      collectSource("stcn", () => fetchStcnItems(client, pages)),
+      collectSource("jiemian", () => fetchJiemianItems(client, 3)),
+      collectSource("keji", () => fetchKejiItems(client, 30)),
+      collectSource("starMarket", () => fetchStarMarketItems(client, 30)),
+      collectSource("jingjiGlobal", () => fetchJingjiGlobalItems(client, 30)),
     ]);
+    const { items: stcnItems, pagesFetched } = stcn;
+    const jiemianItems = jiemian.items;
+    const kejiItems = keji.items;
+    const starMarketItems = starMarket.items;
+    const jingjiGlobalItems = jingjiGlobal.items;
+    // Optional images run only after all news lists have had their turn.
+    await enrichJiemianImages(client, jiemianItems);
     const items = [...stcnItems, ...jiemianItems, ...kejiItems, ...starMarketItems, ...jingjiGlobalItems].sort(
       (a, b) => b.timestamp - a.timestamp,
     );
+    if (!items.length) throw new Error("All news sources failed; see sourceStatus");
     const payload = buildPayload(items, pagesFetched);
     payload.isLive = true;
     payload.isFallback = false;
+    payload.isPartial = Object.values(sourceStatus).some((source) => source.state !== "ok");
+    payload.sourceStatus = sourceStatus;
+    payload.requestCount = client.requestCount;
     payload.jiemianArticleCount = jiemianItems.length;
     payload.kejiArticleCount = kejiItems.length;
     payload.starMarketArticleCount = starMarketItems.length;
     payload.jingjiGlobalArticleCount = jingjiGlobalItems.length;
+    console.info("[news] Fetch complete:", JSON.stringify({
+      requestCount: client.requestCount, articleCount: items.length, sourceStatus,
+    }));
     const response = jsonResponse(payload, 200, true);
-    context.waitUntil(edgeCache.put(cacheKey, response.clone()));
+    context.waitUntil(edgeCache.put(cacheKey, response.clone()).catch((error) => {
+      console.warn("[news] Cache write failed:", String(error));
+    }));
     return response;
   } catch (error) {
+    console.error("[news] Fetch failed:", String(error));
     return jsonResponse(
       {
         state: 0,
         msg: `Failed to fetch live news: ${String(error)}`,
+        sourceStatus,
+        requestCount: client.requestCount,
       },
       502,
     );
