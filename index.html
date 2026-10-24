@@ -2205,6 +2205,7 @@
 
       els.refreshBtn.addEventListener("click", function () {
         loadNews(true);
+        loadJinse();
       });
 
       els.themeToggle.addEventListener("click", function () {
@@ -2432,29 +2433,38 @@
         els.refreshBtn.classList.add("is-loading");
         setHeaderStamp("正在更新实时新闻");
 
-        if (!state.items.length || forceReset) {
+        if (!state.items.length) {
           renderSkeletons();
         }
 
         try {
           const currentVisibleCount = state.visibleCount || 36;
-          const response = await fetch("/api/news?pages=8");
+          const response = await fetch(
+            "/api/news?pages=8" + (forceReset ? "&refresh=1" : ""),
+            { cache: "no-store", signal: AbortSignal.timeout(28000) }
+          );
           if (!response.ok) {
-            throw new Error("HTTP " + response.status);
+            const errorPayload = await response.json().catch(function () { return null; });
+            throw new Error(errorPayload && errorPayload.msg || "HTTP " + response.status);
           }
 
           const payload = await response.json();
+          if (!Array.isArray(payload.items) || !payload.items.length) {
+            throw new Error("新闻接口未返回有效内容");
+          }
           writeCachedPayload(NEWS_CACHE_KEY, payload);
           if (forceReset) {
             stopSpeech();
           }
           applyNewsPayload(payload, forceReset, currentVisibleCount);
         } catch (error) {
-          setHeaderStamp("实时接口请求失败");
+          setHeaderStamp(state.items.length ? "更新失败，保留已有新闻" : "实时接口请求失败");
           if (!state.items.length) {
             els.newsGrid.innerHTML = "";
             els.emptyState.textContent = "实时接口请求失败，请稍后刷新或检查部署日志";
             els.emptyState.classList.add("is-visible");
+          } else {
+            renderList(true);
           }
           syncMoreButton();
           syncJinseMoreButton();
@@ -2507,7 +2517,7 @@
         const restored = { news: false, jinse: false };
         const newsPayload = readCachedPayload(NEWS_CACHE_KEY);
         if (newsPayload && Array.isArray(newsPayload.items) && newsPayload.items.length) {
-          applyNewsPayload(newsPayload, false, 36);
+          applyNewsPayload(Object.assign({}, newsPayload, { isFallback: true, isLive: false }), false, 36);
           restored.news = true;
         }
 
@@ -2523,7 +2533,7 @@
         if (!restored.news) {
           loadBootstrapPayload(NEWS_BOOTSTRAP_URL, function (payload) {
             if (!state.items.length) {
-              applyNewsPayload(payload, false, 36);
+              applyNewsPayload(Object.assign({}, payload, { isFallback: true, isLive: false }), false, 36);
             }
           });
         }
@@ -3185,7 +3195,7 @@
         }
 
         state.statusText = payload.generatedAtLabel
-          ? "更新于 " + payload.generatedAtLabel
+          ? (payload.isPartial ? "部分新闻源暂不可用 · 更新于 " : "更新于 ") + payload.generatedAtLabel
           : "已完成刷新";
         setHeaderStamp(state.statusText);
       }
